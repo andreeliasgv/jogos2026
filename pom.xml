@@ -12,7 +12,7 @@
     <artifactId>jogos2026</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>jogos2026</name>
-    <description>jogos2026</description>
+    <description>API para controle de jogos</description>
     <url/>
     <licenses>
         <license/>
