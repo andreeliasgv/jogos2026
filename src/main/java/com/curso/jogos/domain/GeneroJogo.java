@@ -1,13 +1,40 @@
 package com.curso.jogos.domain;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@Entity
+@Table(name = "genero_jogo")
 public class GeneroJogo {
-    private final String nome;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 120)
+    private String nome;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
     private Status status;
-    private final List<Jogo> jogos = new ArrayList<>();
+
+    @OneToMany(mappedBy = "genero", fetch = FetchType.LAZY)
+    private List<Jogo> jogos = new ArrayList<>();
+
+    protected GeneroJogo() {
+    }
 
     public GeneroJogo(String nome) {
         this.nome = validarTextoObrigatorio(nome, "Nome do gênero é obrigatório");
@@ -37,6 +64,8 @@ public class GeneroJogo {
     public void inativar() {
         this.status = Status.INATIVO;
     }
+
+    public Long getId() { return id; }
 
     public String getNome() {
         return nome;

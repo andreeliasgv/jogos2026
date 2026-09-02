@@ -1,0 +1,131 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-01-create-jogo
+      author: andre
+      comment: Cria a tabela de jogos.
+      changes:
+        - createTable:
+            tableName: jogo
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_jogo
+                    nullable: false
+              - column:
+                  name: codigo_jogo
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: titulo
+                  type: VARCHAR(150)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantidade_disponivel
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: preco_unitario
+                  type: NUMERIC(18,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: data_cadastro
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: genero_jogo_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: jogo
+
+  - changeSet:
+      id: 002-02-unique-codigo-jogo
+      author: andre
+      comment: Impede códigos de jogo duplicados.
+      changes:
+        - addUniqueConstraint:
+            tableName: jogo
+            columnNames: codigo_jogo
+            constraintName: uk_jogo_codigo_jogo
+      rollback:
+        - dropUniqueConstraint:
+            tableName: jogo
+            constraintName: uk_jogo_codigo_jogo
+
+  - changeSet:
+      id: 002-03-foreign-key-genero-jogo
+      author: andre
+      comment: Relaciona cada jogo ao seu gênero.
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: jogo
+            baseColumnNames: genero_jogo_id
+            referencedTableName: genero_jogo
+            referencedColumnNames: id
+            constraintName: fk_jogo_genero_jogo
+            onDelete: RESTRICT
+      rollback:
+        - dropForeignKeyConstraint:
+            baseTableName: jogo
+            constraintName: fk_jogo_genero_jogo
+
+  - changeSet:
+      id: 002-04-check-quantidade-disponivel
+      author: andre
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE jogo
+              ADD CONSTRAINT ck_jogo_quantidade_disponivel
+              CHECK (quantidade_disponivel >= 0)
+      rollback:
+        - sql:
+            sql: >
+              ALTER TABLE jogo
+              DROP CONSTRAINT ck_jogo_quantidade_disponivel
+
+  - changeSet:
+      id: 002-05-check-preco-unitario
+      author: andre
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE jogo
+              ADD CONSTRAINT ck_jogo_preco_unitario
+              CHECK (preco_unitario >= 0)
+      rollback:
+        - sql:
+            sql: >
+              ALTER TABLE jogo
+              DROP CONSTRAINT ck_jogo_preco_unitario
+
+  - changeSet:
+      id: 002-06-check-status-jogo
+      author: andre
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE jogo
+              ADD CONSTRAINT ck_jogo_status
+              CHECK (status IN ('ATIVO', 'INATIVO'))
+      rollback:
+        - sql:
+            sql: >
+              ALTER TABLE jogo
+              DROP CONSTRAINT ck_jogo_status
