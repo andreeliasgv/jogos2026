@@ -3,3 +3,5 @@ databaseChangeLog:
       file: db/changelog/changes/001-create-genero-jogo.yaml
   - include:
       file: db/changelog/changes/002-create-jogo.yaml
+  - include:
+      file: db/changelog/changes/003-desenvolvedora-e-estoque-minimo.yaml

@@ -1,0 +1,167 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-01-create-desenvolvedora
+      author: andre
+      comment: Cria a entidade desenvolvedora identificada por código.
+      changes:
+        - createTable:
+            tableName: desenvolvedora
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_desenvolvedora
+                    nullable: false
+              - column:
+                  name: nome
+                  type: VARCHAR(150)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: codigo
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: desenvolvedora
+
+  - changeSet:
+      id: 003-02-unique-codigo-desenvolvedora
+      author: andre
+      comment: Impede códigos de desenvolvedora duplicados.
+      changes:
+        - addUniqueConstraint:
+            tableName: desenvolvedora
+            columnNames: codigo
+            constraintName: uk_desenvolvedora_codigo
+      rollback:
+        - dropUniqueConstraint:
+            tableName: desenvolvedora
+            constraintName: uk_desenvolvedora_codigo
+
+  - changeSet:
+      id: 003-03-check-status-desenvolvedora
+      author: andre
+      comment: Restringe o status aos valores definidos no enum Status.
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE desenvolvedora
+              ADD CONSTRAINT ck_desenvolvedora_status
+              CHECK (status IN ('ATIVO', 'INATIVO'))
+      rollback:
+        - sql:
+            sql: >
+              ALTER TABLE desenvolvedora
+              DROP CONSTRAINT ck_desenvolvedora_status
+
+
+  - changeSet:
+      id: 003-04-add-estoque-minimo-jogo
+      author: andre
+      comment: Adiciona estoque mínimo inicialmente nullable para preservar os jogos existentes.
+      changes:
+        - addColumn:
+            tableName: jogo
+            columns:
+              - column:
+                  name: estoque_minimo
+                  type: INTEGER
+      rollback:
+        - dropColumn:
+            tableName: jogo
+            columnName: estoque_minimo
+
+  - changeSet:
+      id: 003-05-fill-estoque-minimo-jogo
+      author: andre
+      comment: Preenche com zero o estoque mínimo dos jogos existentes.
+      changes:
+        - update:
+            tableName: jogo
+            columns:
+              - column:
+                  name: estoque_minimo
+                  valueNumeric: 0
+            where: estoque_minimo IS NULL
+      rollback:
+        - update:
+            tableName: jogo
+            columns:
+              - column:
+                  name: estoque_minimo
+                  value: null
+
+  - changeSet:
+      id: 003-06-not-null-estoque-minimo-jogo
+      author: andre
+      comment: Torna o estoque mínimo obrigatório após o preenchimento dos dados existentes.
+      changes:
+        - addNotNullConstraint:
+            tableName: jogo
+            columnName: estoque_minimo
+            columnDataType: INTEGER
+      rollback:
+        - dropNotNullConstraint:
+            tableName: jogo
+            columnName: estoque_minimo
+            columnDataType: INTEGER
+
+  - changeSet:
+      id: 003-07-check-estoque-minimo-jogo
+      author: andre
+      comment: Impede valores negativos no estoque mínimo.
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE jogo
+              ADD CONSTRAINT ck_jogo_estoque_minimo
+              CHECK (estoque_minimo >= 0)
+      rollback:
+        - sql:
+            sql: >
+              ALTER TABLE jogo
+              DROP CONSTRAINT ck_jogo_estoque_minimo
+
+
+  - changeSet:
+      id: 003-08-add-desenvolvedora-jogo
+      author: andre
+      comment: Adiciona desenvolvedora opcional para preservar os jogos existentes.
+      changes:
+        - addColumn:
+            tableName: jogo
+            columns:
+              - column:
+                  name: desenvolvedora_id
+                  type: BIGINT
+      rollback:
+        - dropColumn:
+            tableName: jogo
+            columnName: desenvolvedora_id
+
+  - changeSet:
+      id: 003-09-foreign-key-jogo-desenvolvedora
+      author: andre
+      comment: Relaciona opcionalmente cada jogo à sua desenvolvedora principal.
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: jogo
+            baseColumnNames: desenvolvedora_id
+            referencedTableName: desenvolvedora
+            referencedColumnNames: id
+            constraintName: fk_jogo_desenvolvedora
+            onDelete: RESTRICT
+      rollback:
+        - dropForeignKeyConstraint:
+            baseTableName: jogo
+            constraintName: fk_jogo_desenvolvedora

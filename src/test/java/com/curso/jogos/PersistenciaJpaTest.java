@@ -16,6 +16,7 @@ import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
@@ -54,15 +55,17 @@ class PersistenciaJpaTest {
         assertNotNull(recuperado);
         assertEquals("Baldur's Gate 3", recuperado.getTitulo());
         assertEquals("RPG", recuperado.getGenero().getNome());
+        assertEquals(0, recuperado.getEstoqueMinimo());
+        assertNull(recuperado.getDesenvolvedora());
     }
 
     @Test
-    void deveRegistrarOitoChangeSets() {
+    void deveRegistrarDezesseteChangeSets() {
         Long total = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM databasechangelog",
                 Long.class);
 
-        assertEquals(8L, total);
+        assertEquals(17L, total);
     }
 
     @Test
@@ -83,6 +86,18 @@ class PersistenciaJpaTest {
                         "Segundo jogo",
                         3,
                         generoId));
+    }
+
+    @Test
+    @Transactional
+    void naoDevePermitirCodigoDuplicadoDeDesenvolvedoraNoBanco() {
+        inserirDesenvolvedoraDiretamente("Larian Studios", "LARIAN");
+
+        assertThrows(
+                DataIntegrityViolationException.class,
+                () -> inserirDesenvolvedoraDiretamente(
+                        "Outra desenvolvedora",
+                        "LARIAN"));
     }
 
     @Test
@@ -120,15 +135,25 @@ class PersistenciaJpaTest {
                     titulo,
                     quantidade_disponivel,
                     preco_unitario,
+                    estoque_minimo,
                     data_cadastro,
                     status,
                     genero_jogo_id
                 )
-                VALUES (?, ?, ?, 59.90, DATE '2026-03-10', 'ATIVO', ?)
+                VALUES (?, ?, ?, 59.90, 0, DATE '2026-03-10', 'ATIVO', ?)
                 """,
                 codigo,
                 titulo,
                 quantidade,
                 generoId);
+    }
+
+    private void inserirDesenvolvedoraDiretamente(String nome, String codigo) {
+        jdbcTemplate.update("""
+                INSERT INTO desenvolvedora (nome, codigo, status)
+                VALUES (?, ?, 'ATIVO')
+                """,
+                nome,
+                codigo);
     }
 }

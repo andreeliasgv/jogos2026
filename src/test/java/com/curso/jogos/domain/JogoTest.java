@@ -78,6 +78,39 @@ class JogoTest {
         assertEquals(Status.ATIVO, jogo.getStatus());
     }
 
+    @Test
+    void deveCriarJogoComEstoqueMinimoEAssociarDesenvolvedora() {
+        Jogo jogo = new Jogo(
+                "JG-002",
+                "Divinity: Original Sin 2",
+                5,
+                new BigDecimal("89.90"),
+                2,
+                LocalDate.of(2026, 9, 3));
+
+        Desenvolvedora desenvolvedora = new Desenvolvedora(
+                "Larian Studios",
+                "LARIAN");
+
+        jogo.associarDesenvolvedora(desenvolvedora);
+
+        assertEquals(2, jogo.getEstoqueMinimo());
+        assertEquals(desenvolvedora, jogo.getDesenvolvedora());
+    }
+
+    @Test
+    void naoDeveCriarJogoComEstoqueMinimoNegativo() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new Jogo(
+                        "JG-003",
+                        "Jogo inválido",
+                        5,
+                        new BigDecimal("79.90"),
+                        -1,
+                        LocalDate.of(2026, 9, 3)));
+    }
+
     private Jogo novoJogo(int quantidade, String precoUnitario) {
         return new Jogo("JG-001",
                 "Ruinas de Aurion",

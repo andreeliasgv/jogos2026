@@ -45,6 +45,16 @@ public class Jogo {
             scale = 2)
     private BigDecimal precoUnitario;
 
+    @Column(name = "estoque_minimo", nullable = false)
+    private int estoqueMinimo;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "desenvolvedora_id",
+            foreignKey = @ForeignKey(
+                    name = "fk_jogo_desenvolvedora"))
+    private Desenvolvedora desenvolvedora;
+
     @Column(name = "data_cadastro", nullable = false)
     private LocalDate dataCadastro;
 
@@ -61,10 +71,15 @@ public class Jogo {
     protected Jogo(){}
 
     public Jogo(String codigoJogo, String titulo, int quantidadeDisponivel, BigDecimal precoUnitario, LocalDate dataCadastro) {
+        this(codigoJogo, titulo, quantidadeDisponivel, precoUnitario, 0, dataCadastro);
+    }
+
+    public Jogo(String codigoJogo, String titulo, int quantidadeDisponivel, BigDecimal precoUnitario, int estoqueMinimo, LocalDate dataCadastro) {
         this.codigoJogo = validarTextoObrigatorio(codigoJogo, "Código do jogo é obrigatório");
         this.titulo = validarTextoObrigatorio(titulo, "Título é obrigatório");
         this.quantidadeDisponivel = validarQuantidadeNaoNegativa(quantidadeDisponivel, "Quantidade disponível não pode ser negativa");
         this.precoUnitario = validarValorNaoNegativo(precoUnitario, "Preço unitário não pode ser negativo");
+        this.estoqueMinimo = validarQuantidadeNaoNegativa(estoqueMinimo, "Estoque mínimo não pode ser negativo");
         this.dataCadastro = Objects.requireNonNull(dataCadastro, "Data de cadastro é obrigatória");
         this.status = Status.ATIVO;
     }
@@ -115,6 +130,10 @@ public class Jogo {
         this.genero = genero;
     }
 
+    public void associarDesenvolvedora(Desenvolvedora desenvolvedora) {
+        this.desenvolvedora = Objects.requireNonNull(desenvolvedora, "Desenvolvedora é obrigatória");
+    }
+
     public Long getId() { return id; }
 
     public String getCodigoJogo() {
@@ -133,6 +152,8 @@ public class Jogo {
         return precoUnitario;
     }
 
+    public int getEstoqueMinimo() { return estoqueMinimo; }
+
     public LocalDate getDataCadastro() {
         return dataCadastro;
     }
@@ -144,6 +165,8 @@ public class Jogo {
     public GeneroJogo getGenero() {
         return genero;
     }
+
+    public Desenvolvedora getDesenvolvedora() { return desenvolvedora; }
 
     private static String validarTextoObrigatorio(String texto, String mensagem) {
         if (texto == null || texto.isBlank()) {
