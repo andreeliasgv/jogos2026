@@ -70,6 +70,26 @@ public class GeneroJogoTest {
                 () -> genero.getJogos().add(novoJogo("JG-002")));
     }
 
+    @Test
+    void deveAlterarONome() {
+        GeneroJogo genero = new GeneroJogo("RPG");
+
+        genero.alterarNome("   RPG de ação  ");
+
+        assertEquals("RPG de ação", genero.getNome());
+    }
+
+    @Test
+    void naoDeveAlterarONomeParaBranco() {
+        GeneroJogo genero = new GeneroJogo("RPG");
+
+        IllegalArgumentException excecao = assertThrows(
+                IllegalArgumentException.class,
+                () -> genero.alterarNome("  "));
+
+        assertEquals("Nome do gênero é obrigatório", excecao.getMessage());
+    }
+
     private Jogo novoJogo(String codigo) {
         return new Jogo(
                 codigo,

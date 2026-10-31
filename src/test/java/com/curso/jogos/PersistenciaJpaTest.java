@@ -60,12 +60,12 @@ class PersistenciaJpaTest {
     }
 
     @Test
-    void deveRegistrarDezesseteChangeSets() {
+    void deveRegistrarDezoitoChangeSets() {
         Long total = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM databasechangelog",
                 Long.class);
 
-        assertEquals(17L, total);
+        assertEquals(18L, total);
     }
 
     @Test
@@ -112,6 +112,16 @@ class PersistenciaJpaTest {
                         "Jogo inválido",
                         -1,
                         generoId));
+    }
+
+    @Test
+    @Transactional
+    void bancoDeveImpedirNomeDeGeneroDuplicadoIgnorandoMaiusculas() {
+        inserirGeneroDiretamente("RPG");
+
+        assertThrows(
+                DataIntegrityViolationException.class,
+                () -> inserirGeneroDiretamente("  rpg  "));
     }
 
     private Long inserirGeneroDiretamente(String nome) {

@@ -7,6 +7,10 @@ import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JogoTest {
     @Test
@@ -109,6 +113,45 @@ class JogoTest {
                         new BigDecimal("79.90"),
                         -1,
                         LocalDate.of(2026, 9, 3)));
+    }
+
+    @Test
+    void deveAlterarDadosEditaveisETrocarGenero() {
+        Jogo jogo = novoJogo(3, "79.90");
+        GeneroJogo generoAntigo = new GeneroJogo("Aventura");
+        GeneroJogo novoGenero = new GeneroJogo("RPG");
+
+        generoAntigo.adicionarJogo(jogo);
+
+        jogo.alterarTitulo("Ruínas de Aurion Remaster");
+        jogo.alterarPrecoUnitario(new BigDecimal("99.90"));
+        jogo.alterarEstoqueMinimo(2);
+        jogo.alterarGenero(novoGenero);
+
+        assertEquals(
+                "Ruínas de Aurion Remaster",
+                jogo.getTitulo());
+        assertEquals(
+                new BigDecimal("99.90"),
+                jogo.getPrecoUnitario());
+
+        assertEquals(2, jogo.getEstoqueMinimo());
+        assertSame(
+                novoGenero,
+                jogo.getGenero());
+        assertFalse(generoAntigo.getJogos().contains(jogo));
+        assertTrue(novoGenero.getJogos().contains(jogo));
+    }
+
+    @Test
+    void devePermitirRemoverDesenvolvedora() {
+        Jogo jogo = novoJogo(3, "79.90");
+        Desenvolvedora desenvolvedora = new Desenvolvedora("Larian Studios", "LARIAN");
+
+        jogo.associarDesenvolvedora(desenvolvedora);
+        jogo.alterarDesenvolvedora(null);
+
+        assertNull(jogo.getDesenvolvedora());
     }
 
     private Jogo novoJogo(int quantidade, String precoUnitario) {

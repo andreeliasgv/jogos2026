@@ -10,6 +10,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.curso.jogos.application.RecursoEmUsoException;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -31,14 +32,17 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler({
             RecursoDuplicadoException.class,
+            RecursoEmUsoException.class,
             DataIntegrityViolationException.class
     })
     public ResponseEntity<ApiError> tratarConflito(
             RuntimeException exception,
             HttpServletRequest request) {
-        String mensagem = exception instanceof RecursoDuplicadoException
-                ? exception.getMessage()
-                : "A operação viola uma regra de integridade";
+        String mensagem =
+                exception instanceof RecursoDuplicadoException
+                        || exception instanceof RecursoEmUsoException
+                        ? exception.getMessage()
+                        : "A operação viola uma regra de integridade";
 
         return resposta(
                 HttpStatus.CONFLICT,
@@ -73,6 +77,21 @@ public class ApiExceptionHandler {
         return resposta(
                 HttpStatus.BAD_REQUEST,
                 "JSON ausente ou inválido",
+                request,
+                Map.of());
+    }
+
+    @ExceptionHandler({
+            IllegalArgumentException.class,
+            IllegalStateException.class
+    })
+    public ResponseEntity<ApiError> tratarRegraInvalida(
+            RuntimeException exception,
+            HttpServletRequest request) {
+
+        return resposta(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
                 request,
                 Map.of());
     }

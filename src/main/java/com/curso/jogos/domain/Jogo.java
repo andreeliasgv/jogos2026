@@ -112,6 +112,27 @@ public class Jogo {
         this.precoUnitario = validarValorNaoNegativo(novoPreco, "Preço unitário não pode ser negativo");
     }
 
+    public void alterarEstoqueMinimo(int novoEstoqueMinimo) {
+        this.estoqueMinimo = validarQuantidadeNaoNegativa(novoEstoqueMinimo, "Estoque mínimo não pode ser negativo");
+    }
+
+    public void alterarGenero(GeneroJogo novoGenero) {
+        Objects.requireNonNull(novoGenero, "Gênero do jogo é obrigatório");
+
+        if (this.genero == novoGenero) {
+            return;
+        }
+
+        novoGenero.validarInclusao(this);
+
+        if (this.genero != null) {
+            this.genero.removerInternamente(this);
+        }
+
+        this.genero = novoGenero;
+        novoGenero.adicionarInternamente(this);
+    }
+
     public void ativar() {
         this.status = Status.ATIVO;
     }
@@ -132,6 +153,10 @@ public class Jogo {
 
     public void associarDesenvolvedora(Desenvolvedora desenvolvedora) {
         this.desenvolvedora = Objects.requireNonNull(desenvolvedora, "Desenvolvedora é obrigatória");
+    }
+
+    public void alterarDesenvolvedora(Desenvolvedora novaDesenvolvedora) {
+        this.desenvolvedora = novaDesenvolvedora;
     }
 
     public Long getId() { return id; }

@@ -41,20 +41,17 @@ public class GeneroJogo {
         this.status = Status.ATIVO;
     }
 
+    public void alterarNome(String novoNome) {
+        this.nome = validarTextoObrigatorio(novoNome, "Nome do gênero é obrigatório");
+    }
+
     public void adicionarJogo(Jogo jogo) {
         Objects.requireNonNull(jogo, "Jogo é obrigatório");
 
-        boolean codigoUtilizado = jogos.stream().anyMatch(item -> item != jogo && item.getCodigoJogo().equals(jogo.getCodigoJogo()));
-
-        if (codigoUtilizado) {
-            throw new IllegalArgumentException("Código do jogo já utilizado no gênero");
-        }
-
+        validarInclusao(jogo);
         jogo.associarAo(this);
 
-        if (!jogos.contains(jogo)) {
-            jogos.add(jogo);
-        }
+        adicionarInternamente(jogo);
     }
 
     public void ativar() {
@@ -77,6 +74,24 @@ public class GeneroJogo {
 
     public List<Jogo> getJogos() {
         return List.copyOf(jogos);
+    }
+
+    void validarInclusao(Jogo jogo) {
+        boolean codigoUtilizado = jogos.stream().anyMatch(item -> item != jogo && item.getCodigoJogo().equals(jogo.getCodigoJogo()));
+
+        if (codigoUtilizado) {
+            throw new IllegalArgumentException("Código do jogo já utilizado no gênero");
+        }
+    }
+
+    void adicionarInternamente(Jogo jogo) {
+        if (!jogos.contains(jogo)) {
+            jogos.add(jogo);
+        }
+    }
+
+    void removerInternamente(Jogo jogo) {
+        jogos.remove(jogo);
     }
 
     private static String validarTextoObrigatorio(String texto, String mensagem) {

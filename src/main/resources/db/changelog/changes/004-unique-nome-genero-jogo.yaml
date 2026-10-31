@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-01-unique-nome-normalizado-genero-jogo
+      author: andre
+      comment: Garante unicidade do nome do gênero ignorando caixa e espaços externos.
+      changes:
+        - sql:
+            sql: >
+              CREATE UNIQUE INDEX uk_genero_jogo_nome_lower
+              ON genero_jogo (LOWER(BTRIM(nome)))
+      rollback:
+        - sql:
+            sql: >
+              DROP INDEX uk_genero_jogo_nome_lower
