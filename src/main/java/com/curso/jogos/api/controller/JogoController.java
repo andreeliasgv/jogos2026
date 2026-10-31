@@ -7,9 +7,17 @@ import com.curso.jogos.api.dto.JogoAtualizacaoRequest;
 import com.curso.jogos.api.dto.MovimentacaoEstoqueRequest;
 import com.curso.jogos.api.dto.PaginaResponse;
 import com.curso.jogos.api.dto.StatusRequest;
+import com.curso.jogos.api.exception.ApiError;
 import com.curso.jogos.application.JogoService;
 import com.curso.jogos.domain.Jogo;
 import com.curso.jogos.domain.Status;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +35,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.net.URI;
 
+@Tag(
+        name = "Jogos",
+        description = "Cadastro, consulta e movimentação de estoque dos jogos")
 @RestController
 @RequestMapping("/api/jogos")
 public class JogoController {
@@ -41,6 +52,18 @@ public class JogoController {
         this.mapper = mapper;
     }
 
+    @Operation(
+            summary = "Cadastrar jogo",
+            description = "Cria um jogo ativo associado a um gênero e, opcionalmente, a uma desenvolvedora.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Jogo cadastrado"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Gênero ou desenvolvedora não encontrada",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Código do jogo já utilizado",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @PostMapping
     public ResponseEntity<JogoResponse> cadastrar(
             @Valid @RequestBody JogoRequest request) {
@@ -59,19 +82,45 @@ public class JogoController {
                 .body(mapper.toResponse(cadastrado));
     }
 
+    @Operation(
+            summary = "Consultar jogo por ID",
+            description = "Retorna a representação completa usada na visualização e na tela de alteração.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Jogo encontrado"),
+            @ApiResponse(responseCode = "404", description = "Jogo não encontrado",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @GetMapping("/{id}")
-    public JogoResponse buscarPorId(@PathVariable Long id) {
+    public JogoResponse buscarPorId(
+            @Parameter(description = "Identificador do jogo", example = "1")
+            @PathVariable Long id) {
         return mapper.toResponse(service.buscarPorId(id));
     }
 
+    @Operation(
+            summary = "Pesquisar jogos",
+            description = "Combina filtros opcionais e executa paginação e ordenação no banco de dados.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Pesquisa executada"),
+            @ApiResponse(responseCode = "400", description = "Paginação ou ordenação inválida",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @GetMapping
     public PaginaResponse<JogoResponse> pesquisar(
+            @Parameter(description = "Trecho do título, sem diferenciar maiúsculas de minúsculas",
+                    example = "baldur")
             @RequestParam(required = false) String titulo,
+            @Parameter(description = "Status exato do jogo", example = "ATIVO")
             @RequestParam(required = false) Status status,
+            @Parameter(description = "Identificador do gênero", example = "1")
             @RequestParam(required = false) Long generoId,
+            @Parameter(description = "Identificador da desenvolvedora", example = "1")
             @RequestParam(required = false) Long desenvolvedoraId,
+            @Parameter(description = "Quando verdadeiro, retorna jogos abaixo do estoque mínimo",
+                    example = "true")
             @RequestParam(required = false)
             Boolean abaixoEstoqueMinimo,
+            @Parameter(description = "Parâmetros page, size e sort. A página começa em zero.")
             @PageableDefault(
                     size = 20,
                     sort = "id",
@@ -90,8 +139,22 @@ public class JogoController {
         );
     }
 
+    @Operation(
+            summary = "Alterar jogo",
+            description = "Substitui título, preço, estoque mínimo, gênero e desenvolvedora. "
+                    + "Código, quantidade disponível e status possuem fluxos próprios.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Jogo alterado"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Jogo, gênero ou desenvolvedora não encontrada",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Operação incompatível com a integridade dos dados",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @PutMapping("/{id}")
     public JogoResponse alterar(
+            @Parameter(description = "Identificador do jogo", example = "1")
             @PathVariable Long id,
             @Valid @RequestBody
             JogoAtualizacaoRequest request) {
@@ -108,8 +171,19 @@ public class JogoController {
         );
     }
 
+    @Operation(
+            summary = "Ativar ou inativar jogo",
+            description = "Executa uma transição explícita de status sem alterar os demais campos.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Status alterado"),
+            @ApiResponse(responseCode = "400", description = "Status inválido",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Jogo não encontrado",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @PutMapping("/{id}/status")
     public JogoResponse alterarStatus(
+            @Parameter(description = "Identificador do jogo", example = "1")
             @PathVariable Long id,
             @Valid @RequestBody StatusRequest request) {
 
@@ -118,8 +192,19 @@ public class JogoController {
         );
     }
 
+    @Operation(
+            summary = "Receber unidades",
+            description = "Soma uma quantidade positiva ao estoque atual. Repetir a chamada repete o efeito.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Entrada registrada"),
+            @ApiResponse(responseCode = "400", description = "Quantidade inválida",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Jogo não encontrado",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @PostMapping("/{id}/estoque/entradas")
     public JogoResponse receberUnidades(
+            @Parameter(description = "Identificador do jogo", example = "1")
             @PathVariable Long id,
             @Valid @RequestBody
             MovimentacaoEstoqueRequest request) {
@@ -129,8 +214,20 @@ public class JogoController {
         );
     }
 
+    @Operation(
+            summary = "Retirar unidades",
+            description = "Subtrai uma quantidade positiva sem permitir estoque negativo. "
+                    + "Repetir a chamada repete o efeito.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Saída registrada"),
+            @ApiResponse(responseCode = "400", description = "Quantidade inválida ou estoque insuficiente",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Jogo não encontrado",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @PostMapping("/{id}/estoque/saidas")
     public JogoResponse retirarUnidades(
+            @Parameter(description = "Identificador do jogo", example = "1")
             @PathVariable Long id,
             @Valid @RequestBody
             MovimentacaoEstoqueRequest request) {
@@ -140,8 +237,20 @@ public class JogoController {
         );
     }
 
+    @Operation(
+            summary = "Excluir jogo",
+            description = "Exclui fisicamente o jogo informado.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Jogo excluído"),
+            @ApiResponse(responseCode = "404", description = "Jogo não encontrado",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Jogo referenciado por outro registro",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+    public ResponseEntity<Void> excluir(
+            @Parameter(description = "Identificador do jogo", example = "1")
+            @PathVariable Long id) {
 
         service.excluir(id);
         return ResponseEntity.noContent().build();

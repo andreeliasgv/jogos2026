@@ -57,7 +57,19 @@ DTOs definem os contratos de entrada e saída, mapeadores isolam as conversões 
 
 As pesquisas de gêneros e jogos aceitam filtros opcionais, ordenação e os parâmetros `page` e `size`. A resposta utiliza um contrato estável com o conteúdo e os metadados da página. O tamanho padrão é 20 e o limite máximo é 100.
 
-A API pode ser testada manualmente pela coleção Postman disponível na documentação da Aula 08. A suíte automatizada possui 52 testes entre domínio, persistência, aplicação e API.
+A API pode ser testada manualmente pela coleção Postman disponível na documentação da Aula 08.
+
+Na Aula 09, o contrato HTTP passou a ser publicado em OpenAPI e apresentado pelo Swagger UI. Controllers, operações, parâmetros, respostas, paginação, DTOs e o formato `ApiError` possuem descrições e exemplos fictícios próprios do domínio.
+
+Com a aplicação executada no profile de desenvolvimento, a documentação fica disponível em:
+
+```text
+OpenAPI JSON: http://localhost:8080/v3/api-docs
+OpenAPI YAML: http://localhost:8080/v3/api-docs.yaml
+Swagger UI:   http://localhost:8080/swagger-ui.html
+```
+
+No profile de produção, o documento e a interface permanecem desabilitados até que exista uma decisão explícita de publicação. A suíte automatizada possui 53 testes entre domínio, persistência, aplicação, API e contrato OpenAPI.
 
 ## Entregas
 
@@ -67,3 +79,4 @@ A API pode ser testada manualmente pela coleção Postman disponível na documen
 - [Aula 06 — Evolução do modelo](docs/06aula/entrega.md)
 - [Aula 07 — API REST, DTOs e mapeadores](docs/07aula/entrega.md)
 - [Aula 08 — CRUD completo, estoque e consultas paginadas](docs/08aula/entrega.md)
+- [Aula 09 — Documentação da API com OpenAPI](docs/09aula/entrega.md)
