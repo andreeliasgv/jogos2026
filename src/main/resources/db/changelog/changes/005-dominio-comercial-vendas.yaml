@@ -1,0 +1,435 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-01-create-fornecedor
+      author: jogos-2026
+      comment: Cadastra fornecedores com documento fiscal validado pela aplicação.
+      changes:
+        - createTable:
+            tableName: fornecedor
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_fornecedor
+                    nullable: false
+              - column:
+                  name: razao_social
+                  type: VARCHAR(150)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: cnpj
+                  type: VARCHAR(14)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uk_fornecedor_cnpj
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: >
+              ALTER TABLE fornecedor
+              ADD CONSTRAINT ck_fornecedor_status
+              CHECK (status IN ('ATIVO', 'INATIVO'))
+        - sql:
+            sql: >
+              ALTER TABLE fornecedor
+              ADD CONSTRAINT ck_fornecedor_cnpj_formato
+              CHECK (cnpj ~ '^[0-9]{14}$')
+      rollback:
+        - dropTable:
+            tableName: fornecedor
+
+  - changeSet:
+      id: 005-02-associate-fornecedor-jogo
+      author: jogos-2026
+      changes:
+        - addColumn:
+            tableName: jogo
+            columns:
+              - column:
+                  name: fornecedor_id
+                  type: BIGINT
+        - addForeignKeyConstraint:
+            baseTableName: jogo
+            baseColumnNames: fornecedor_id
+            referencedTableName: fornecedor
+            referencedColumnNames: id
+            constraintName: fk_jogo_fornecedor
+            onDelete: RESTRICT
+      rollback:
+        - dropForeignKeyConstraint:
+            baseTableName: jogo
+            constraintName: fk_jogo_fornecedor
+        - dropColumn:
+            tableName: jogo
+            columnName: fornecedor_id
+
+  - changeSet:
+      id: 005-03-create-pessoa
+      author: jogos-2026
+      comment: Centraliza a identidade compartilhada pelos papéis de cliente e colaborador.
+      changes:
+        - createTable:
+            tableName: pessoa
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_pessoa
+                    nullable: false
+              - column:
+                  name: nome
+                  type: VARCHAR(150)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email
+                  type: VARCHAR(180)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: cpf
+                  type: VARCHAR(11)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: data_cadastro
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: pessoa
+
+  - changeSet:
+      id: 005-04-unique-email-pessoa
+      author: jogos-2026
+      changes:
+        - sql:
+            sql: >
+              CREATE UNIQUE INDEX uk_pessoa_email_lower
+              ON pessoa (LOWER(BTRIM(email)))
+      rollback:
+        - sql:
+            sql: DROP INDEX uk_pessoa_email_lower
+
+  - changeSet:
+      id: 005-05-unique-cpf-pessoa
+      author: jogos-2026
+      changes:
+        - addUniqueConstraint:
+            tableName: pessoa
+            columnNames: cpf
+            constraintName: uk_pessoa_cpf
+      rollback:
+        - dropUniqueConstraint:
+            tableName: pessoa
+            constraintName: uk_pessoa_cpf
+
+  - changeSet:
+      id: 005-06-check-pessoa
+      author: jogos-2026
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE pessoa
+              ADD CONSTRAINT ck_pessoa_status
+              CHECK (status IN ('ATIVO', 'INATIVO'))
+        - sql:
+            sql: >
+              ALTER TABLE pessoa
+              ADD CONSTRAINT ck_pessoa_cpf_formato
+              CHECK (cpf ~ '^[0-9]{11}$')
+      rollback:
+        - sql:
+            sql: ALTER TABLE pessoa DROP CONSTRAINT ck_pessoa_cpf_formato
+        - sql:
+            sql: ALTER TABLE pessoa DROP CONSTRAINT ck_pessoa_status
+
+  - changeSet:
+      id: 005-07-create-cliente
+      author: jogos-2026
+      changes:
+        - createTable:
+            tableName: cliente
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_cliente
+                    nullable: false
+              - column:
+                  name: pessoa_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uk_cliente_pessoa
+              - column:
+                  name: telefone
+                  type: VARCHAR(30)
+      rollback:
+        - dropTable:
+            tableName: cliente
+
+  - changeSet:
+      id: 005-08-fk-cliente-pessoa
+      author: jogos-2026
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: cliente
+            baseColumnNames: pessoa_id
+            referencedTableName: pessoa
+            referencedColumnNames: id
+            constraintName: fk_cliente_pessoa
+            onDelete: RESTRICT
+      rollback:
+        - dropForeignKeyConstraint:
+            baseTableName: cliente
+            constraintName: fk_cliente_pessoa
+
+  - changeSet:
+      id: 005-09-create-colaborador
+      author: jogos-2026
+      changes:
+        - createTable:
+            tableName: colaborador
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_colaborador
+                    nullable: false
+              - column:
+                  name: pessoa_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uk_colaborador_pessoa
+              - column:
+                  name: matricula
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uk_colaborador_matricula
+              - column:
+                  name: funcao
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: data_admissao
+                  type: DATE
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: colaborador
+
+  - changeSet:
+      id: 005-10-constraints-colaborador
+      author: jogos-2026
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: colaborador
+            baseColumnNames: pessoa_id
+            referencedTableName: pessoa
+            referencedColumnNames: id
+            constraintName: fk_colaborador_pessoa
+            onDelete: RESTRICT
+        - sql:
+            sql: >
+              ALTER TABLE colaborador
+              ADD CONSTRAINT ck_colaborador_funcao
+              CHECK (funcao IN ('VENDEDOR', 'ESTOQUISTA', 'GERENTE', 'ADMINISTRATIVO'))
+      rollback:
+        - sql:
+            sql: ALTER TABLE colaborador DROP CONSTRAINT ck_colaborador_funcao
+        - dropForeignKeyConstraint:
+            baseTableName: colaborador
+            constraintName: fk_colaborador_pessoa
+
+  - changeSet:
+      id: 005-11-create-venda
+      author: jogos-2026
+      changes:
+        - createTable:
+            tableName: venda
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_venda
+                    nullable: false
+              - column:
+                  name: cliente_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: vendedor_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: data_venda
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropTable:
+            tableName: venda
+
+  - changeSet:
+      id: 005-12-constraints-venda
+      author: jogos-2026
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: venda
+            baseColumnNames: cliente_id
+            referencedTableName: cliente
+            referencedColumnNames: id
+            constraintName: fk_venda_cliente
+            onDelete: RESTRICT
+        - addForeignKeyConstraint:
+            baseTableName: venda
+            baseColumnNames: vendedor_id
+            referencedTableName: colaborador
+            referencedColumnNames: id
+            constraintName: fk_venda_colaborador
+            onDelete: RESTRICT
+        - sql:
+            sql: >
+              ALTER TABLE venda
+              ADD CONSTRAINT ck_venda_status
+              CHECK (status IN ('ABERTA', 'FINALIZADA', 'CANCELADA'))
+      rollback:
+        - sql:
+            sql: ALTER TABLE venda DROP CONSTRAINT ck_venda_status
+        - dropForeignKeyConstraint:
+            baseTableName: venda
+            constraintName: fk_venda_colaborador
+        - dropForeignKeyConstraint:
+            baseTableName: venda
+            constraintName: fk_venda_cliente
+
+  - changeSet:
+      id: 005-13-create-item-venda
+      author: jogos-2026
+      comment: Preserva a quantidade e o preço praticado para cada jogo vendido.
+      changes:
+        - createTable:
+            tableName: item_venda
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_item_venda
+                    nullable: false
+              - column:
+                  name: venda_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: jogo_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: quantidade
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: preco_unitario
+                  type: NUMERIC(18,2)
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: item_venda
+            columnNames: venda_id, jogo_id
+            constraintName: uk_item_venda_jogo
+      rollback:
+        - dropTable:
+            tableName: item_venda
+
+  - changeSet:
+      id: 005-14-fks-item-venda
+      author: jogos-2026
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: item_venda
+            baseColumnNames: venda_id
+            referencedTableName: venda
+            referencedColumnNames: id
+            constraintName: fk_item_venda_venda
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: item_venda
+            baseColumnNames: jogo_id
+            referencedTableName: jogo
+            referencedColumnNames: id
+            constraintName: fk_item_venda_jogo
+            onDelete: RESTRICT
+      rollback:
+        - dropForeignKeyConstraint:
+            baseTableName: item_venda
+            constraintName: fk_item_venda_jogo
+        - dropForeignKeyConstraint:
+            baseTableName: item_venda
+            constraintName: fk_item_venda_venda
+
+  - changeSet:
+      id: 005-15-checks-item-venda
+      author: jogos-2026
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE item_venda
+              ADD CONSTRAINT ck_item_venda_quantidade
+              CHECK (quantidade > 0)
+        - sql:
+            sql: >
+              ALTER TABLE item_venda
+              ADD CONSTRAINT ck_item_venda_preco_unitario
+              CHECK (preco_unitario >= 0)
+      rollback:
+        - sql:
+            sql: ALTER TABLE item_venda DROP CONSTRAINT ck_item_venda_preco_unitario
+        - sql:
+            sql: ALTER TABLE item_venda DROP CONSTRAINT ck_item_venda_quantidade

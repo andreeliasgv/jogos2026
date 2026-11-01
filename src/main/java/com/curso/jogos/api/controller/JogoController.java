@@ -54,12 +54,12 @@ public class JogoController {
 
     @Operation(
             summary = "Cadastrar jogo",
-            description = "Cria um jogo ativo associado a um gênero e, opcionalmente, a uma desenvolvedora.")
+            description = "Cria um jogo ativo associado a gênero e, opcionalmente, desenvolvedora e fornecedor.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Jogo cadastrado"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos",
                     content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Gênero ou desenvolvedora não encontrada",
+            @ApiResponse(responseCode = "404", description = "Relacionamento informado não encontrado",
                     content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "409", description = "Código do jogo já utilizado",
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
@@ -72,7 +72,8 @@ public class JogoController {
         Jogo cadastrado = service.cadastrar(
                 jogo,
                 request.generoId(),
-                request.desenvolvedoraId());
+                request.desenvolvedoraId(),
+                request.fornecedorId());
 
         URI location = URI.create(
                 "/api/jogos/" + cadastrado.getId());
@@ -116,6 +117,8 @@ public class JogoController {
             @RequestParam(required = false) Long generoId,
             @Parameter(description = "Identificador da desenvolvedora", example = "1")
             @RequestParam(required = false) Long desenvolvedoraId,
+            @Parameter(description = "Identificador do fornecedor", example = "1")
+            @RequestParam(required = false) Long fornecedorId,
             @Parameter(description = "Quando verdadeiro, retorna jogos abaixo do estoque mínimo",
                     example = "true")
             @RequestParam(required = false)
@@ -133,6 +136,7 @@ public class JogoController {
                         status,
                         generoId,
                         desenvolvedoraId,
+                        fornecedorId,
                         abaixoEstoqueMinimo,
                         pageable
                 ), mapper::toResponse
@@ -141,7 +145,7 @@ public class JogoController {
 
     @Operation(
             summary = "Alterar jogo",
-            description = "Substitui título, preço, estoque mínimo, gênero e desenvolvedora. "
+            description = "Substitui título, preço, estoque mínimo, gênero, desenvolvedora e fornecedor. "
                     + "Código, quantidade disponível e status possuem fluxos próprios.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Jogo alterado"),
@@ -166,7 +170,8 @@ public class JogoController {
                         request.precoUnitario(),
                         request.estoqueMinimo(),
                         request.generoId(),
-                        request.desenvolvedoraId()
+                        request.desenvolvedoraId(),
+                        request.fornecedorId()
                 )
         );
     }

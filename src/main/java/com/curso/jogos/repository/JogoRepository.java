@@ -27,15 +27,15 @@ public interface JogoRepository extends
     List<Jogo> findByGeneroId(Long generoId);
     List<Jogo> findByStatus(Status status);
 
-    @EntityGraph(attributePaths = {"genero", "desenvolvedora"})
+    @EntityGraph(attributePaths = {"genero", "desenvolvedora", "fornecedor"})
     @Query("select j from Jogo j order by j.id")
     List<Jogo> buscarTodosComRelacionamentos();
 
-    @EntityGraph(attributePaths = {"genero", "desenvolvedora"})
+    @EntityGraph(attributePaths = {"genero", "desenvolvedora", "fornecedor"})
     @Query("select j from Jogo j where j.id = :id")
     Optional<Jogo> buscarPorIdComRelacionamentos(@Param("id") Long id);
 
     @Override
-    @EntityGraph(attributePaths = {"genero", "desenvolvedora"})
+    @EntityGraph(attributePaths = {"genero", "desenvolvedora", "fornecedor"})
     Page<Jogo> findAll(Specification<Jogo> specification, Pageable pageable);
 }

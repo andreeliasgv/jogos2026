@@ -2,10 +2,12 @@ package com.curso.jogos.application;
 
 import com.curso.jogos.domain.Desenvolvedora;
 import com.curso.jogos.domain.GeneroJogo;
+import com.curso.jogos.domain.Fornecedor;
 import com.curso.jogos.domain.Jogo;
 import com.curso.jogos.domain.Status;
 import com.curso.jogos.repository.DesenvolvedoraRepository;
 import com.curso.jogos.repository.GeneroJogoRepository;
+import com.curso.jogos.repository.FornecedorRepository;
 import com.curso.jogos.repository.JogoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,19 +26,22 @@ public class JogoService {
     private final JogoRepository jogoRepository;
     private final GeneroJogoRepository generoRepository;
     private final DesenvolvedoraRepository desenvolvedoraRepository;
+    private final FornecedorRepository fornecedorRepository;
 
     public JogoService(
             JogoRepository jogoRepository,
             GeneroJogoRepository generoRepository,
-            DesenvolvedoraRepository desenvolvedoraRepository) {
+            DesenvolvedoraRepository desenvolvedoraRepository,
+            FornecedorRepository fornecedorRepository) {
         this.jogoRepository = jogoRepository;
         this.generoRepository = generoRepository;
         this.desenvolvedoraRepository = desenvolvedoraRepository;
+        this.fornecedorRepository = fornecedorRepository;
     }
 
     @Transactional
     public Jogo cadastrar(Jogo jogo, Long generoId) {
-        return cadastrar(jogo, generoId, null);
+        return cadastrar(jogo, generoId, null, null);
     }
 
     @Transactional
@@ -44,6 +49,15 @@ public class JogoService {
             Jogo jogo,
             Long generoId,
             Long desenvolvedoraId) {
+        return cadastrar(jogo, generoId, desenvolvedoraId, null);
+    }
+
+    @Transactional
+    public Jogo cadastrar(
+            Jogo jogo,
+            Long generoId,
+            Long desenvolvedoraId,
+            Long fornecedorId) {
         if (jogoRepository.existsByCodigoJogo(jogo.getCodigoJogo())) {
             throw new RecursoDuplicadoException(
                     "Código do jogo já cadastrado");
@@ -65,21 +79,33 @@ public class JogoService {
             jogo.associarDesenvolvedora(desenvolvedora);
         }
 
+        if (fornecedorId != null) {
+            jogo.associarFornecedor(buscarFornecedor(fornecedorId));
+        }
+
         return jogoRepository.save(jogo);
     }
 
     @Transactional
     public Jogo alterar(Long id, String titulo, BigDecimal precoUnitario, int estoqueMinimo, Long generoId, Long desenvolvedoraId) {
+        return alterar(id, titulo, precoUnitario, estoqueMinimo, generoId, desenvolvedoraId, null);
+    }
+
+    @Transactional
+    public Jogo alterar(Long id, String titulo, BigDecimal precoUnitario, int estoqueMinimo,
+                        Long generoId, Long desenvolvedoraId, Long fornecedorId) {
         Jogo jogo = buscarEntidade(id);
         GeneroJogo genero = buscarGenero(generoId);
 
         Desenvolvedora desenvolvedora = desenvolvedoraId == null ? null : buscarDesenvolvedora(desenvolvedoraId);
+        Fornecedor fornecedor = fornecedorId == null ? null : buscarFornecedor(fornecedorId);
 
         jogo.alterarTitulo(titulo);
         jogo.alterarPrecoUnitario(precoUnitario);
         jogo.alterarEstoqueMinimo(estoqueMinimo);
         jogo.alterarGenero(genero);
         jogo.alterarDesenvolvedora(desenvolvedora);
+        jogo.alterarFornecedor(fornecedor);
 
         return jogo;
     }
@@ -111,6 +137,12 @@ public class JogoService {
     @Transactional(readOnly = true)
     public Page<Jogo> pesquisar(String titulo, Status status, Long generoId, Long desenvolvedoraId,
                                 Boolean abaixoEstoqueMinimo, Pageable pageable) {
+        return pesquisar(titulo, status, generoId, desenvolvedoraId, null, abaixoEstoqueMinimo, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Jogo> pesquisar(String titulo, Status status, Long generoId, Long desenvolvedoraId,
+                                Long fornecedorId, Boolean abaixoEstoqueMinimo, Pageable pageable) {
         validarOrdenacao(pageable, Set.of("id", "codigoJogo", "titulo", "quantidadeDisponivel",
                 "precoUnitario", "estoqueMinimo", "dataCadastro", "status")
         );
@@ -137,6 +169,11 @@ public class JogoService {
         if (desenvolvedoraId != null) {
             filtros = filtros.and((root, query, criteriaBuilder) ->
                     criteriaBuilder.equal(root.get("desenvolvedora").get("id"), desenvolvedoraId));
+        }
+
+        if (fornecedorId != null) {
+            filtros = filtros.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.equal(root.get("fornecedor").get("id"), fornecedorId));
         }
 
         if (Boolean.TRUE.equals(abaixoEstoqueMinimo)) {
@@ -184,6 +221,11 @@ public class JogoService {
     private Desenvolvedora buscarDesenvolvedora(Long id) {
         return desenvolvedoraRepository.findById(id).orElseThrow(() ->
                 new RecursoNaoEncontradoException("Desenvolvedora não encontrada"));
+    }
+
+    private Fornecedor buscarFornecedor(Long id) {
+        return fornecedorRepository.findById(id).orElseThrow(() ->
+                new RecursoNaoEncontradoException("Fornecedor não encontrado"));
     }
 
     private void validarOrdenacao(Pageable pageable, Set<String> camposPermitidos) {

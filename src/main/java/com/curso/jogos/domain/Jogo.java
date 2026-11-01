@@ -55,6 +55,12 @@ public class Jogo {
                     name = "fk_jogo_desenvolvedora"))
     private Desenvolvedora desenvolvedora;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "fornecedor_id",
+            foreignKey = @ForeignKey(name = "fk_jogo_fornecedor"))
+    private Fornecedor fornecedor;
+
     @Column(name = "data_cadastro", nullable = false)
     private LocalDate dataCadastro;
 
@@ -159,6 +165,14 @@ public class Jogo {
         this.desenvolvedora = novaDesenvolvedora;
     }
 
+    public void associarFornecedor(Fornecedor fornecedor) {
+        this.fornecedor = Objects.requireNonNull(fornecedor, "Fornecedor é obrigatório");
+    }
+
+    public void alterarFornecedor(Fornecedor fornecedor) {
+        this.fornecedor = fornecedor;
+    }
+
     public Long getId() { return id; }
 
     public String getCodigoJogo() {
@@ -192,6 +206,8 @@ public class Jogo {
     }
 
     public Desenvolvedora getDesenvolvedora() { return desenvolvedora; }
+
+    public Fornecedor getFornecedor() { return fornecedor; }
 
     private static String validarTextoObrigatorio(String texto, String mensagem) {
         if (texto == null || texto.isBlank()) {

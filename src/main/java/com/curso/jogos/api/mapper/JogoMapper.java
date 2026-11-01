@@ -3,6 +3,7 @@ package com.curso.jogos.api.mapper;
 import com.curso.jogos.api.dto.JogoRequest;
 import com.curso.jogos.api.dto.JogoResponse;
 import com.curso.jogos.domain.Desenvolvedora;
+import com.curso.jogos.domain.Fornecedor;
 import com.curso.jogos.domain.Jogo;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +24,7 @@ public class JogoMapper {
 
     public JogoResponse toResponse(Jogo jogo) {
         Desenvolvedora desenvolvedora = jogo.getDesenvolvedora();
+        Fornecedor fornecedor = jogo.getFornecedor();
 
         return new JogoResponse(
                 jogo.getId(),
@@ -37,6 +39,8 @@ public class JogoMapper {
                 jogo.getGenero().getId(),
                 jogo.getGenero().getNome(),
                 desenvolvedora == null ? null : desenvolvedora.getId(),
-                desenvolvedora == null ? null : desenvolvedora.getNome());
+                desenvolvedora == null ? null : desenvolvedora.getNome(),
+                fornecedor == null ? null : fornecedor.getId(),
+                fornecedor == null ? null : fornecedor.getRazaoSocial());
     }
 }

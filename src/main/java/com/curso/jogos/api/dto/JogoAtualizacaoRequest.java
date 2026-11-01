@@ -34,5 +34,10 @@ public record JogoAtualizacaoRequest(
         @Schema(description = "Identificador opcional de uma desenvolvedora existente",
                 example = "1", nullable = true)
         @Positive(message = "Identificador da desenvolvedora deve ser positivo")
-        Long desenvolvedoraId) {
+        Long desenvolvedoraId,
+
+        @Schema(description = "Identificador opcional do fornecedor",
+                example = "1", nullable = true)
+        @Positive(message = "Identificador do fornecedor deve ser positivo")
+        Long fornecedorId) {
 }

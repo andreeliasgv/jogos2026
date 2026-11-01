@@ -1,0 +1,614 @@
+{
+  "info": {
+    "_postman_id": "jogos-2026-aula-10",
+    "name": "Jogos 2026 - Aula 10",
+    "description": "Fluxo comercial completo: pessoas, papéis, fornecedor, jogo, venda, preço histórico e baixa transacional de estoque.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "runId",
+      "value": ""
+    },
+    {
+      "key": "cpfCliente",
+      "value": ""
+    },
+    {
+      "key": "cpfVendedor",
+      "value": ""
+    },
+    {
+      "key": "cnpjFornecedor",
+      "value": ""
+    },
+    {
+      "key": "pessoaClienteId",
+      "value": ""
+    },
+    {
+      "key": "clienteId",
+      "value": ""
+    },
+    {
+      "key": "pessoaVendedorId",
+      "value": ""
+    },
+    {
+      "key": "vendedorId",
+      "value": ""
+    },
+    {
+      "key": "fornecedorId",
+      "value": ""
+    },
+    {
+      "key": "generoId",
+      "value": ""
+    },
+    {
+      "key": "desenvolvedoraId",
+      "value": ""
+    },
+    {
+      "key": "jogoId",
+      "value": ""
+    },
+    {
+      "key": "vendaId",
+      "value": ""
+    },
+    {
+      "key": "itemId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Iniciar cenário e verificar saúde",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const seed = Date.now().toString();",
+              "function repetidos(valor) { return valor.split('').every(c => c === valor[0]); }",
+              "function digitoCpf(base, peso) {",
+              "  let soma = 0;",
+              "  for (const c of base) soma += Number(c) * peso--;",
+              "  const resto = soma % 11;",
+              "  return resto < 2 ? 0 : 11 - resto;",
+              "}",
+              "function gerarCpf() {",
+              "  let base = seed.slice(-9).padStart(9, '1');",
+              "  if (repetidos(base)) base = '123456789';",
+              "  const primeiro = digitoCpf(base, 10);",
+              "  return base + primeiro + digitoCpf(base + primeiro, 11);",
+              "}",
+              "function digitoCnpj(base) {",
+              "  let peso = base.length - 7;",
+              "  let soma = 0;",
+              "  for (const c of base) { soma += Number(c) * peso--; if (peso === 1) peso = 9; }",
+              "  const resto = soma % 11;",
+              "  return resto < 2 ? 0 : 11 - resto;",
+              "}",
+              "function gerarCnpj() {",
+              "  let base = ('12' + seed.slice(-10)).slice(-12);",
+              "  if (repetidos(base)) base = '123456780001';",
+              "  const primeiro = digitoCnpj(base);",
+              "  return base + primeiro + digitoCnpj(base + primeiro);",
+              "}",
+              "pm.collectionVariables.set('runId', seed);",
+              "pm.collectionVariables.set('cpfCliente', gerarCpf());",
+              "const outraBase = String(BigInt(seed) + 7919n).slice(-9).padStart(9, '2');",
+              "const primeiro = digitoCpf(outraBase, 10);",
+              "pm.collectionVariables.set('cpfVendedor', outraBase + primeiro + digitoCpf(outraBase + primeiro, 11));",
+              "pm.collectionVariables.set('cnpjFornecedor', gerarCnpj());"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Health deve retornar 200', () => pm.response.to.have.status(200));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/health"
+      }
+    },
+    {
+      "name": "02 - Cadastrar pessoa cliente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Pessoa cliente criada', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('pessoaClienteId', pm.response.json().id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/pessoas",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Cliente Aula 10\",\n  \"email\": \"cliente.{{runId}}@example.com\",\n  \"cpf\": \"{{cpfCliente}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "03 - Associar papel de cliente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Cliente criado', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('clienteId', pm.response.json().id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/clientes",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pessoaId\": {{pessoaClienteId}},\n  \"telefone\": \"(11) 99999-0000\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "04 - Cadastrar pessoa vendedora",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Pessoa vendedora criada', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('pessoaVendedorId', pm.response.json().id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/pessoas",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Vendedor Aula 10\",\n  \"email\": \"vendedor.{{runId}}@example.com\",\n  \"cpf\": \"{{cpfVendedor}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "05 - Associar papel de colaborador",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Colaborador criado', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('vendedorId', pm.response.json().id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/colaboradores",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pessoaId\": {{pessoaVendedorId}},\n  \"matricula\": \"VEN-{{runId}}\",\n  \"funcao\": \"VENDEDOR\",\n  \"dataAdmissao\": \"2026-10-31\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "06 - Cadastrar fornecedor",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Fornecedor criado', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('fornecedorId', pm.response.json().id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/fornecedores",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"razaoSocial\": \"Distribuidora Aula 10 {{runId}}\",\n  \"cnpj\": \"{{cnpjFornecedor}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "07 - Cadastrar gênero",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Gênero criado', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('generoId', pm.response.json().id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/generos",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"RPG Venda {{runId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "08 - Cadastrar desenvolvedora",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Desenvolvedora criada', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('desenvolvedoraId', pm.response.json().id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/desenvolvedoras",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Estúdio Aula 10 {{runId}}\",\n  \"codigo\": \"DEV-{{runId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "09 - Cadastrar jogo para venda",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Jogo criado', () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set('jogoId', pm.response.json().id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/jogos",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"codigoJogo\": \"VENDA-{{runId}}\",\n  \"titulo\": \"Aventura Comercial\",\n  \"quantidadeDisponivel\": 10,\n  \"precoUnitario\": 149.90,\n  \"estoqueMinimo\": 2,\n  \"generoId\": {{generoId}},\n  \"desenvolvedoraId\": {{desenvolvedoraId}},\n  \"fornecedorId\": {{fornecedorId}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "10 - Abrir venda",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Venda aberta', () => pm.response.to.have.status(201));",
+              "const resposta = pm.response.json();",
+              "pm.expect(resposta.status).to.eql('ABERTA');",
+              "pm.collectionVariables.set('vendaId', resposta.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/vendas",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clienteId\": {{clienteId}},\n  \"vendedorId\": {{vendedorId}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "11 - Adicionar jogo à venda",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Item adicionado', () => pm.response.to.have.status(200));",
+              "const resposta = pm.response.json();",
+              "pm.expect(resposta.itens[0].precoUnitario).to.eql(149.90);",
+              "pm.collectionVariables.set('itemId', resposta.itens[0].id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/vendas/{{vendaId}}/itens",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"jogoId\": {{jogoId}},\n  \"quantidade\": 2\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "12 - Alterar preço atual do jogo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Preço atual alterado', () => pm.response.to.have.status(200));",
+              "pm.expect(pm.response.json().precoUnitario).to.eql(179.90);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/jogos/{{jogoId}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"titulo\": \"Aventura Comercial\",\n  \"precoUnitario\": 179.90,\n  \"estoqueMinimo\": 2,\n  \"generoId\": {{generoId}},\n  \"desenvolvedoraId\": {{desenvolvedoraId}},\n  \"fornecedorId\": {{fornecedorId}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "13 - Conferir preço histórico da venda",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Venda consultada', () => pm.response.to.have.status(200));",
+              "const resposta = pm.response.json();",
+              "pm.expect(resposta.itens[0].precoUnitario).to.eql(149.90);",
+              "pm.expect(resposta.total).to.eql(299.80);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/vendas/{{vendaId}}"
+      }
+    },
+    {
+      "name": "14 - Finalizar venda",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Venda finalizada', () => pm.response.to.have.status(200));",
+              "pm.expect(pm.response.json().status).to.eql('FINALIZADA');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/api/vendas/{{vendaId}}/finalizacao"
+      }
+    },
+    {
+      "name": "15 - Conferir baixa de estoque",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Jogo consultado', () => pm.response.to.have.status(200));",
+              "pm.expect(pm.response.json().quantidadeDisponivel).to.eql(8);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/jogos/{{jogoId}}"
+      }
+    },
+    {
+      "name": "16 - Impedir remoção após finalização",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Venda finalizada não pode mudar', () => pm.response.to.have.status(400));",
+              "pm.expect(pm.response.json().message).to.include('Somente vendas abertas');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/vendas/{{vendaId}}/itens/{{itemId}}"
+      }
+    },
+    {
+      "name": "17 - Pesquisar vendas finalizadas",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Pesquisa deve retornar 200', () => pm.response.to.have.status(200));",
+              "const ids = pm.response.json().conteudo.map(v => v.id);",
+              "pm.expect(ids).to.include(Number(pm.collectionVariables.get('vendaId')));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/vendas?status=FINALIZADA&page=0&size=5&sort=dataVenda,desc"
+      }
+    }
+  ]
+}
+

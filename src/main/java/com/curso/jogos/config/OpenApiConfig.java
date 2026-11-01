@@ -15,8 +15,8 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("Jogos 2026 API")
-                        .description("API didática para gerenciamento de gêneros, "
-                                + "desenvolvedoras, jogos e movimentações de estoque.")
+                        .description("API didática para gêneros, desenvolvedoras, fornecedores, "
+                                + "pessoas, clientes, colaboradores, jogos, vendas e estoque.")
                         .version("1.0.0")
                         .contact(new Contact()
                                 .name("Projeto Jogos 2026")))
