@@ -38,6 +38,8 @@ As entidades concentram as regras de alteração, status, associações e estoqu
 
 Pessoa representa a identidade compartilhada. Cliente e Colaborador são papéis opcionais modelados por composição, permitindo que a mesma pessoa exerça ambos sem herança JPA. A finalização de uma venda valida todos os itens e baixa seus estoques em uma única transação.
 
+Na Aula 11, finalizações de vendas e movimentações manuais passaram a adquirir locks pessimistas nos jogos antes de alterar o estoque. Vendas com vários itens bloqueiam os jogos por ID crescente, reduzindo o risco de deadlock. O teste concorrente usa duas transações reais e comprova que somente uma venda consome um saldo disputado.
+
 ## API REST
 
 A partir da Aula 07, a aplicação disponibiliza endpoints REST para gêneros, desenvolvedoras e jogos. Na Aula 08, gêneros e jogos receberam alteração, status, exclusão e consultas paginadas; jogos também receberam movimentações de estoque.
@@ -112,7 +114,7 @@ No profile de produção, o documento e a interface permanecem desabilitados at�
 
 Na Aula 10, CPF e CNPJ passaram a ser validados por dígitos verificadores tanto no domínio quanto na entrada HTTP. Vendas preservam o preço histórico dos jogos e só baixam o estoque quando finalizadas. A coleção Postman da aula executa um cenário comercial completo com 17 requisições.
 
-A suíte automatizada possui 66 testes entre domínio, persistência, aplicação, API e contrato OpenAPI.
+A suíte automatizada possui 67 testes entre domínio, persistência, aplicação, API e contrato OpenAPI.
 
 ## Entregas
 
@@ -124,3 +126,4 @@ A suíte automatizada possui 66 testes entre domínio, persistência, aplicaçã
 - [Aula 08 — CRUD completo, estoque e consultas paginadas](docs/08aula/entrega.md)
 - [Aula 09 — Documentação da API com OpenAPI](docs/09aula/entrega.md)
 - [Aula 10 — Pessoas, fornecedores e vendas](docs/10aula/entrega.md)
+- [Aula 11 — Concorrência de estoque e locking](docs/11aula/entrega.md)

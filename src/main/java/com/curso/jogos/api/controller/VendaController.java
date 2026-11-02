@@ -93,8 +93,10 @@ public class VendaController {
         return mapper.toResponse(service.removerItem(vendaId, itemId));
     }
 
-    @Operation(summary = "Finalizar venda",
-            description = "Baixa o estoque de todos os itens na mesma transação e finaliza.")
+    @Operation(
+            summary = "Finalizar venda",
+            description = "Valida toda a venda, bloqueia os jogos em ordem determinística "
+                    + "e baixa o estoque na mesma transação.")
     @PostMapping("/{id}/finalizacao")
     public VendaResponse finalizar(@PathVariable Long id) {
         return mapper.toResponse(service.finalizar(id));

@@ -9,6 +9,8 @@ import com.curso.jogos.repository.DesenvolvedoraRepository;
 import com.curso.jogos.repository.GeneroJogoRepository;
 import com.curso.jogos.repository.FornecedorRepository;
 import com.curso.jogos.repository.JogoRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
@@ -27,16 +29,19 @@ public class JogoService {
     private final GeneroJogoRepository generoRepository;
     private final DesenvolvedoraRepository desenvolvedoraRepository;
     private final FornecedorRepository fornecedorRepository;
+    private final EntityManager entityManager;
 
     public JogoService(
             JogoRepository jogoRepository,
             GeneroJogoRepository generoRepository,
             DesenvolvedoraRepository desenvolvedoraRepository,
-            FornecedorRepository fornecedorRepository) {
+            FornecedorRepository fornecedorRepository,
+            EntityManager entityManager) {
         this.jogoRepository = jogoRepository;
         this.generoRepository = generoRepository;
         this.desenvolvedoraRepository = desenvolvedoraRepository;
         this.fornecedorRepository = fornecedorRepository;
+        this.entityManager = entityManager;
     }
 
     @Transactional
@@ -197,6 +202,7 @@ public class JogoService {
     @Transactional
     public Jogo receberUnidades(Long id, int quantidade) {
         Jogo jogo = buscarEntidade(id);
+        entityManager.refresh(jogo, LockModeType.PESSIMISTIC_WRITE);
         jogo.receberUnidades(quantidade);
         return jogo;
     }
@@ -204,6 +210,7 @@ public class JogoService {
     @Transactional
     public Jogo retirarUnidades(Long id, int quantidade) {
         Jogo jogo = buscarEntidade(id);
+        entityManager.refresh(jogo, LockModeType.PESSIMISTIC_WRITE);
         jogo.retirarUnidades(quantidade);
         return jogo;
     }

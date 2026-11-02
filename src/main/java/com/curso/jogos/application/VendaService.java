@@ -12,6 +12,8 @@ import com.curso.jogos.repository.ClienteRepository;
 import com.curso.jogos.repository.ColaboradorRepository;
 import com.curso.jogos.repository.JogoRepository;
 import com.curso.jogos.repository.VendaRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -20,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -28,13 +32,16 @@ public class VendaService {
     private final ClienteRepository clienteRepository;
     private final ColaboradorRepository colaboradorRepository;
     private final JogoRepository jogoRepository;
+    private final EntityManager entityManager;
 
     public VendaService(VendaRepository repository, ClienteRepository clienteRepository,
-                        ColaboradorRepository colaboradorRepository, JogoRepository jogoRepository) {
+                        ColaboradorRepository colaboradorRepository, JogoRepository jogoRepository,
+                        EntityManager entityManager) {
         this.repository = repository;
         this.clienteRepository = clienteRepository;
         this.colaboradorRepository = colaboradorRepository;
         this.jogoRepository = jogoRepository;
+        this.entityManager = entityManager;
     }
 
     @Transactional
@@ -69,12 +76,22 @@ public class VendaService {
     public Venda finalizar(Long id) {
         Venda venda = buscarEntidade(id);
         validarParticipantes(venda.getCliente(), venda.getVendedor());
-        for (ItemVenda item : venda.getItens()) {
-            if (item.getJogo().getStatus() != Status.ATIVO) {
+
+        List<ItemVenda> itensOrdenados = venda.getItens().stream()
+                .sorted(Comparator.comparing(item -> item.getJogo().getId()))
+                .toList();
+
+        for (ItemVenda item : itensOrdenados) {
+            Jogo jogo = item.getJogo();
+            entityManager.refresh(jogo, LockModeType.PESSIMISTIC_WRITE);
+
+            if (jogo.getStatus() != Status.ATIVO) {
                 throw new IllegalArgumentException("Todos os jogos da venda devem estar ativos");
             }
-            item.getJogo().retirarUnidades(item.getQuantidade());
+
+            jogo.retirarUnidades(item.getQuantidade());
         }
+
         venda.finalizar();
         return venda;
     }

@@ -199,7 +199,8 @@ public class JogoController {
 
     @Operation(
             summary = "Receber unidades",
-            description = "Soma uma quantidade positiva ao estoque atual. Repetir a chamada repete o efeito.")
+            description = "Bloqueia o jogo e soma uma quantidade positiva ao estoque atual. "
+                    + "Repetir a chamada repete o efeito.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Entrada registrada"),
             @ApiResponse(responseCode = "400", description = "Quantidade inválida",
@@ -221,7 +222,7 @@ public class JogoController {
 
     @Operation(
             summary = "Retirar unidades",
-            description = "Subtrai uma quantidade positiva sem permitir estoque negativo. "
+            description = "Bloqueia o jogo e subtrai uma quantidade positiva sem permitir estoque negativo. "
                     + "Repetir a chamada repete o efeito.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Saída registrada"),
