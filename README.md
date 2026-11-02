@@ -45,6 +45,8 @@ Na Aula 11, finalizações de vendas e movimentações manuais passaram a adquir
 
 Na Aula 12, `ContaAcesso` passou a concentrar login, hash BCrypt, status e perfis sem misturar credenciais com `Pessoa`, `Cliente` ou `Colaborador`. O Spring Security carrega as contas do PostgreSQL e protege todas as rotas que não foram explicitamente declaradas públicas.
 
+Na Aula 13, login e senha passaram a ser enviados somente ao endpoint de autenticação. A API emite um JWT assinado com HS256 e validade absoluta de 30 minutos; o OAuth2 Resource Server valida a assinatura, o emissor e os claims temporais em cada chamada protegida.
+
 ## API REST
 
 A partir da Aula 07, a aplicação disponibiliza endpoints REST para gêneros, desenvolvedoras e jogos. Na Aula 08, gêneros e jogos receberam alteração, status, exclusão e consultas paginadas; jogos também receberam movimentações de estoque.
@@ -101,6 +103,8 @@ POST   /api/vendas/{id}/cancelamento
 POST /api/contas-acesso
 GET  /api/contas-acesso/me
 PUT  /api/contas-acesso/me/senha
+
+POST /api/autenticacao/login
 ```
 
 DTOs definem os contratos de entrada e saída, mapeadores isolam as conversões e o tratamento global de exceções padroniza os erros `400`, `404` e `409`.
@@ -123,9 +127,13 @@ No profile de produção, o documento e a interface permanecem desabilitados at�
 
 Na Aula 10, CPF e CNPJ passaram a ser validados por dígitos verificadores tanto no domínio quanto na entrada HTTP. Vendas preservam o preço histórico dos jogos e só baixam o estoque quando finalizadas. A coleção Postman da aula executa um cenário comercial completo com 17 requisições.
 
-Na Aula 12, a API passou a usar HTTP Basic de forma stateless. Health, documentação e o bootstrap provisório de pessoa e conta permanecem públicos; as demais rotas exigem autenticação. Senhas são armazenadas somente como hash `{bcrypt}` e Basic deve ser usado apenas sobre HTTPS/TLS em produção.
+Na Aula 12, a API passou a armazenar senhas somente como hash `{bcrypt}` e a carregar contas do banco com Spring Security. Na Aula 13, o HTTP Basic foi substituído por JWT: health, documentação, login e o bootstrap provisório de pessoa e conta permanecem públicos; as demais rotas exigem `Authorization: Bearer <token>`.
 
-A suíte automatizada possui 75 testes entre domínio, persistência, aplicação, segurança, API e contrato OpenAPI.
+O token contém emissor, login, instante de emissão, expiração, identificador e perfis controlados pelo servidor. Seu payload é codificado, não criptografado, e por isso não contém senha nem informações confidenciais. A chave real permanece somente no `.env` local.
+
+A coleção Postman da Aula 13 automatiza o bootstrap, captura o JWT após o login e valida o acesso Bearer e os principais cenários de rejeição em 20 testes.
+
+A suíte automatizada possui 77 testes entre domínio, persistência, aplicação, segurança, API e contrato OpenAPI.
 
 ## Entregas
 
@@ -139,3 +147,4 @@ A suíte automatizada possui 75 testes entre domínio, persistência, aplicaçã
 - [Aula 10 — Pessoas, fornecedores e vendas](docs/10aula/entrega.md)
 - [Aula 11 — Concorrência de estoque e locking](docs/11aula/entrega.md)
 - [Aula 12 — Autenticação e proteção de senhas](docs/12aula/entrega.md)
+- [Aula 13 — JWT, Bearer Token e OAuth2 Resource Server](docs/13aula/entrega.md)

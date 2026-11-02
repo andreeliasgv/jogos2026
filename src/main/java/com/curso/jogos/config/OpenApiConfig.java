@@ -20,15 +20,16 @@ public class OpenApiConfig {
                         .title("Jogos 2026 API")
                         .description("API didática para gêneros, desenvolvedoras, fornecedores, "
                                 + "pessoas, contas de acesso, clientes, colaboradores, jogos, "
-                                + "vendas e estoque. HTTP Basic deve ser usado somente sobre TLS.")
+                                + "vendas e estoque. Rotas protegidas usam JWT Bearer.")
                         .version("1.0.0")
                         .contact(new Contact()
                                 .name("Projeto Jogos 2026")))
                 .components(new Components()
-                        .addSecuritySchemes("basicAuth", new SecurityScheme()
+                        .addSecuritySchemes("bearerAuth", new SecurityScheme()
                                 .type(SecurityScheme.Type.HTTP)
-                                .scheme("basic")))
-                .addSecurityItem(new SecurityRequirement().addList("basicAuth"))
+                                .scheme("bearer")
+                                .bearerFormat("JWT")))
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .externalDocs(new ExternalDocumentation()
                         .description("Repositório e documentação do projeto")
                         .url("https://github.com/andreeliasgv/jogos2026"));

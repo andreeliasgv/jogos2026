@@ -1,0 +1,231 @@
+{
+  "info": {
+    "_postman_id": "4d5e7a13-2b9c-4f61-8a20-aula13jogos2026",
+    "name": "Jogos 2026 - Aula 13",
+    "description": "Fluxo didático de autenticação JWT: bootstrap, login, captura automática do token, acesso Bearer e cenários de rejeição. Contém somente credenciais fictícias.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{accessToken}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "pessoaId", "value": "" },
+    { "key": "authLogin", "value": "" },
+    { "key": "authPassword", "value": "uma-frase-senha-2026" },
+    { "key": "accessToken", "value": "" },
+    { "key": "cpf", "value": "" },
+    { "key": "email", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 - Health público",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/health"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Health público deve retornar 200', () => pm.response.to.have.status(200));"
+        ] }
+      }]
+    },
+    {
+      "name": "02 - Criar pessoa para bootstrap",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": { "exec": [
+            "const sufixo = Date.now().toString();",
+            "let base = sufixo.slice(-9).padStart(9, '0');",
+            "if (/^(.)\\1+$/.test(base)) base = '123456789';",
+            "const digito = (valor, peso) => {",
+            "  let soma = 0;",
+            "  for (const caractere of valor) soma += Number(caractere) * peso--;",
+            "  const resto = soma % 11;",
+            "  return resto < 2 ? 0 : 11 - resto;",
+            "};",
+            "const primeiro = digito(base, 10);",
+            "pm.collectionVariables.set('cpf', base + primeiro + digito(base + primeiro, 11));",
+            "pm.collectionVariables.set('email', `aula13.${sufixo}@example.com`);",
+            "pm.collectionVariables.set('authLogin', `operador.${sufixo}`);",
+            "pm.collectionVariables.unset('accessToken');"
+          ] }
+        },
+        {
+          "listen": "test",
+          "script": { "exec": [
+            "pm.test('Pessoa deve ser criada', () => pm.response.to.have.status(201));",
+            "const json = pm.response.json();",
+            "pm.collectionVariables.set('pessoaId', json.id);",
+            "pm.test('Identificador da pessoa deve ser gerado', () => pm.expect(json.id).to.be.a('number'));"
+          ] }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Operadora Aula 13\",\n  \"email\": \"{{email}}\",\n  \"cpf\": \"{{cpf}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/pessoas"
+      }
+    },
+    {
+      "name": "03 - Criar conta pública",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pessoaId\": {{pessoaId}},\n  \"login\": \"{{authLogin}}\",\n  \"senha\": \"{{authPassword}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/contas-acesso"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Conta deve ser criada', () => pm.response.to.have.status(201));",
+          "const json = pm.response.json();",
+          "pm.test('Perfil inicial deve ser OPERADOR', () => pm.expect(json.perfis).to.include('OPERADOR'));",
+          "pm.test('Resposta não deve expor senha ou hash', () => {",
+          "  pm.expect(json).not.to.have.property('senha');",
+          "  pm.expect(json).not.to.have.property('senhaHash');",
+          "});"
+        ] }
+      }]
+    },
+    {
+      "name": "04 - Realizar login e capturar JWT",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"login\": \"{{authLogin}}\",\n  \"senha\": \"{{authPassword}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/autenticacao/login"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Login válido deve retornar 200', () => pm.response.to.have.status(200));",
+          "const body = pm.response.json();",
+          "pm.test('Resposta deve anunciar Bearer', () => pm.expect(body.tokenType).to.eql('Bearer'));",
+          "pm.test('Token deve durar 1800 segundos', () => pm.expect(body.expiresIn).to.eql(1800));",
+          "pm.test('JWT deve possuir três segmentos', () => pm.expect(body.accessToken.split('.')).to.have.lengthOf(3));",
+          "if (pm.response.code === 200) pm.collectionVariables.set('accessToken', body.accessToken);",
+          "const segmento = body.accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');",
+          "const base64 = segmento.padEnd(Math.ceil(segmento.length / 4) * 4, '=');",
+          "const payload = JSON.parse(decodeURIComponent(escape(atob(base64))));",
+          "pm.test('Subject deve identificar o login', () => pm.expect(payload.sub).to.eql(pm.collectionVariables.get('authLogin')));",
+          "pm.test('Perfil deve vir da conta autenticada', () => pm.expect(payload.perfis).to.include('OPERADOR'));",
+          "pm.test('Claims temporais e identificador devem existir', () => {",
+          "  pm.expect(payload.exp).to.be.above(payload.iat);",
+          "  pm.expect(payload.jti).to.be.a('string').and.not.empty;",
+          "});",
+          "console.log('Payload apenas decodificado para estudo; a validação da assinatura cabe ao servidor:', payload);"
+        ] }
+      }]
+    },
+    {
+      "name": "05 - Consultar própria conta com Bearer",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/contas-acesso/me"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Bearer válido deve retornar 200', () => pm.response.to.have.status(200));",
+          "pm.test('Conta autenticada deve corresponder ao token', () => pm.expect(pm.response.json().login).to.eql(pm.collectionVariables.get('authLogin')));"
+        ] }
+      }]
+    },
+    {
+      "name": "06 - Negar rota protegida sem token",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/contas-acesso/me"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Ausência de token deve retornar 401', () => pm.response.to.have.status(401));"
+        ] }
+      }]
+    },
+    {
+      "name": "07 - Negar Bearer malformado",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "token.invalido.alterado", "type": "string" }]
+        },
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/contas-acesso/me"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Token inválido deve retornar 401', () => pm.response.to.have.status(401));"
+        ] }
+      }]
+    },
+    {
+      "name": "08 - Confirmar que Basic não é mais aceito",
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{authLogin}}", "type": "string" },
+            { "key": "password", "value": "{{authPassword}}", "type": "string" }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/contas-acesso/me"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('HTTP Basic deve retornar 401', () => pm.response.to.have.status(401));"
+        ] }
+      }]
+    },
+    {
+      "name": "09 - Negar login com senha incorreta",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"login\": \"{{authLogin}}\",\n  \"senha\": \"senha-incorreta-2026\"\n}"
+        },
+        "url": "{{baseUrl}}/api/autenticacao/login"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Senha incorreta deve retornar 401', () => pm.response.to.have.status(401));",
+          "pm.test('Erro não deve revelar qual credencial falhou', () => pm.expect(pm.response.json().message).to.eql('Login ou senha inválidos'));"
+        ] }
+      }]
+    }
+  ]
+}
