@@ -3,6 +3,8 @@ package com.curso.jogos.api.controller;
 import com.curso.jogos.api.dto.AlteracaoSenhaRequest;
 import com.curso.jogos.api.dto.ContaAcessoRequest;
 import com.curso.jogos.api.dto.ContaAcessoResponse;
+import com.curso.jogos.api.dto.PerfisContaAcessoRequest;
+import com.curso.jogos.api.dto.StatusContaAcessoRequest;
 import com.curso.jogos.api.exception.ApiError;
 import com.curso.jogos.api.mapper.ContaAcessoMapper;
 import com.curso.jogos.application.ContaAcessoService;
@@ -12,13 +14,13 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,10 +42,11 @@ public class ContaAcessoController {
 
     @Operation(
             summary = "Criar conta de acesso",
-            description = "Bootstrap público provisório. Cria conta ativa somente com o perfil OPERADOR.")
-    @SecurityRequirements
+            description = "Cria uma conta ativa com perfil OPERADOR. Exige ADMINISTRADOR.")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Conta criada sem expor a senha"),
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido"),
+            @ApiResponse(responseCode = "403", description = "Perfil ADMINISTRADOR obrigatório"),
             @ApiResponse(responseCode = "400", description = "Dados ou senha inválidos",
                     content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Pessoa não encontrada",
@@ -84,5 +87,51 @@ public class ContaAcessoController {
             @Valid @RequestBody AlteracaoSenhaRequest request) {
         service.alterarSenha(authentication.getName(), request.senhaAtual(), request.novaSenha());
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "Alterar perfis da conta",
+            description = "Substitui todos os perfis. Exige ADMINISTRADOR.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Perfis alterados"),
+            @ApiResponse(responseCode = "400", description = "Perfis inválidos ou proteção administrativa",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido"),
+            @ApiResponse(responseCode = "403", description = "Perfil ADMINISTRADOR obrigatório"),
+            @ApiResponse(responseCode = "404", description = "Conta não encontrada",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PutMapping("/{id}/perfis")
+    public ContaAcessoResponse alterarPerfis(
+            @PathVariable Long id,
+            Authentication authentication,
+            @Valid @RequestBody PerfisContaAcessoRequest request) {
+        return mapper.toResponse(service.alterarPerfis(
+                id,
+                request.perfis(),
+                authentication.getName()));
+    }
+
+    @Operation(
+            summary = "Alterar status da conta",
+            description = "Ativa ou bloqueia uma conta. Exige ADMINISTRADOR.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Status alterado"),
+            @ApiResponse(responseCode = "400", description = "Status inválido ou proteção administrativa",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Token ausente ou inválido"),
+            @ApiResponse(responseCode = "403", description = "Perfil ADMINISTRADOR obrigatório"),
+            @ApiResponse(responseCode = "404", description = "Conta não encontrada",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PutMapping("/{id}/status")
+    public ContaAcessoResponse alterarStatus(
+            @PathVariable Long id,
+            Authentication authentication,
+            @Valid @RequestBody StatusContaAcessoRequest request) {
+        return mapper.toResponse(service.alterarStatus(
+                id,
+                request.status(),
+                authentication.getName()));
     }
 }

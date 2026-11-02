@@ -47,6 +47,8 @@ Na Aula 12, `ContaAcesso` passou a concentrar login, hash BCrypt, status e perfi
 
 Na Aula 13, login e senha passaram a ser enviados somente ao endpoint de autenticação. A API emite um JWT assinado com HS256 e validade absoluta de 30 minutos; o OAuth2 Resource Server valida a assinatura, o emissor e os claims temporais em cada chamada protegida.
 
+Na Aula 14, os perfis do JWT passaram a ser convertidos em authorities. Operadores executam atividades cotidianas, enquanto criação e gestão de contas e exclusões exigem `ADMINISTRADOR`. A política é aplicada tanto na cadeia HTTP quanto nos serviços administrativos.
+
 ## API REST
 
 A partir da Aula 07, a aplicação disponibiliza endpoints REST para gêneros, desenvolvedoras e jogos. Na Aula 08, gêneros e jogos receberam alteração, status, exclusão e consultas paginadas; jogos também receberam movimentações de estoque.
@@ -103,6 +105,8 @@ POST   /api/vendas/{id}/cancelamento
 POST /api/contas-acesso
 GET  /api/contas-acesso/me
 PUT  /api/contas-acesso/me/senha
+PUT  /api/contas-acesso/{id}/perfis
+PUT  /api/contas-acesso/{id}/status
 
 POST /api/autenticacao/login
 ```
@@ -133,7 +137,9 @@ O token contém emissor, login, instante de emissão, expiração, identificador
 
 A coleção Postman da Aula 13 automatiza o bootstrap, captura o JWT após o login e valida o acesso Bearer e os principais cenários de rejeição em 20 testes.
 
-A suíte automatizada possui 77 testes entre domínio, persistência, aplicação, segurança, API e contrato OpenAPI.
+Na Aula 14, o bootstrap público foi encerrado. A primeira conta administrativa é provisionada uma única vez por configuração externa e recebe `OPERADOR` e `ADMINISTRADOR`. Depois disso, a flag de provisionamento deve ser desligada e novas contas passam a exigir um token administrativo.
+
+A suíte automatizada possui 82 testes entre domínio, persistência, aplicação, segurança, API e contrato OpenAPI.
 
 ## Entregas
 
@@ -148,3 +154,4 @@ A suíte automatizada possui 77 testes entre domínio, persistência, aplicaçã
 - [Aula 11 — Concorrência de estoque e locking](docs/11aula/entrega.md)
 - [Aula 12 — Autenticação e proteção de senhas](docs/12aula/entrega.md)
 - [Aula 13 — JWT, Bearer Token e OAuth2 Resource Server](docs/13aula/entrega.md)
+- [Aula 14 — Autorização, perfis e controle de acesso](docs/14aula/entrega.md)

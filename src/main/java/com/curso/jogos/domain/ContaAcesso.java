@@ -77,6 +77,21 @@ public class ContaAcesso {
         this.perfis.add(Objects.requireNonNull(perfil, "Perfil é obrigatório"));
     }
 
+    public void substituirPerfis(Set<PerfilAcesso> novosPerfis) {
+        if (novosPerfis == null || novosPerfis.isEmpty()) {
+            throw new IllegalArgumentException("A conta deve possuir ao menos um perfil");
+        }
+        LinkedHashSet<PerfilAcesso> perfisValidados = new LinkedHashSet<>();
+        novosPerfis.forEach(perfil -> perfisValidados.add(
+                Objects.requireNonNull(perfil, "Perfil é obrigatório")));
+        this.perfis.clear();
+        this.perfis.addAll(perfisValidados);
+    }
+
+    public boolean possuiPerfil(PerfilAcesso perfil) {
+        return this.perfis.contains(perfil);
+    }
+
     public boolean podeAutenticar() {
         return status == StatusContaAcesso.ATIVA
                 && pessoa.getStatus() == Status.ATIVO;
@@ -104,6 +119,6 @@ public class ContaAcesso {
         if (senhaHash == null || senhaHash.isBlank()) {
             throw new IllegalArgumentException("Hash da senha é obrigatório");
         }
-        return senhaHash;
+        return senhaHash.trim();
     }
 }

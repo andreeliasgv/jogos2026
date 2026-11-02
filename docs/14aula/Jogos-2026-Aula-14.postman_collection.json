@@ -1,0 +1,304 @@
+{
+  "info": {
+    "_postman_id": "b93d1a14-62ca-4fa8-9f31-aula14jogos2026",
+    "name": "Jogos 2026 - Aula 14",
+    "description": "Autorização RBAC com OPERADOR e ADMINISTRADOR. A senha administrativa deve ser preenchida somente como valor local no Postman e nunca exportada para o Git.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{accessToken}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "adminLogin", "value": "administrador" },
+    { "key": "adminPassword", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "accessToken", "value": "" },
+    { "key": "operatorToken", "value": "" },
+    { "key": "operatorPersonId", "value": "" },
+    { "key": "operatorAccountId", "value": "" },
+    { "key": "operatorLogin", "value": "" },
+    { "key": "operatorPassword", "value": "uma-frase-senha-2026" },
+    { "key": "cpf", "value": "" },
+    { "key": "email", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 - Health público",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/health"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Health público deve retornar 200', () => pm.response.to.have.status(200));"
+        ] }
+      }]
+    },
+    {
+      "name": "02 - Login do administrador",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"login\": \"{{adminLogin}}\",\n  \"senha\": \"{{adminPassword}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/autenticacao/login"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Administrador deve autenticar', () => pm.response.to.have.status(200));",
+          "const body = pm.response.json();",
+          "pm.collectionVariables.set('adminToken', body.accessToken);",
+          "pm.collectionVariables.set('accessToken', body.accessToken);",
+          "const parte = body.accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');",
+          "const payload = JSON.parse(atob(parte.padEnd(Math.ceil(parte.length / 4) * 4, '=')));",
+          "pm.test('Token administrativo deve conter OPERADOR', () => pm.expect(payload.perfis).to.include('OPERADOR'));",
+          "pm.test('Token administrativo deve conter ADMINISTRADOR', () => pm.expect(payload.perfis).to.include('ADMINISTRADOR'));"
+        ] }
+      }]
+    },
+    {
+      "name": "03 - Administrador cadastra pessoa do operador",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": { "exec": [
+            "const sufixo = Date.now().toString();",
+            "let base = sufixo.slice(-9).padStart(9, '0');",
+            "if (/^(.)\\1+$/.test(base)) base = '123456789';",
+            "const digito = (valor, peso) => {",
+            "  let soma = 0;",
+            "  for (const caractere of valor) soma += Number(caractere) * peso--;",
+            "  const resto = soma % 11;",
+            "  return resto < 2 ? 0 : 11 - resto;",
+            "};",
+            "const primeiro = digito(base, 10);",
+            "pm.collectionVariables.set('cpf', base + primeiro + digito(base + primeiro, 11));",
+            "pm.collectionVariables.set('email', `aula14.${sufixo}@example.com`);",
+            "pm.collectionVariables.set('operatorLogin', `operador.${sufixo}`);"
+          ] }
+        },
+        {
+          "listen": "test",
+          "script": { "exec": [
+            "pm.test('Administrador deve criar pessoa', () => pm.response.to.have.status(201));",
+            "const json = pm.response.json();",
+            "pm.collectionVariables.set('operatorPersonId', json.id);",
+            "pm.test('Pessoa deve receber identificador', () => pm.expect(json.id).to.be.a('number'));"
+          ] }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+        },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nome\": \"Operador Aula 14\",\n  \"email\": \"{{email}}\",\n  \"cpf\": \"{{cpf}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/pessoas"
+      }
+    },
+    {
+      "name": "04 - Administrador cria conta OPERADOR",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+        },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pessoaId\": {{operatorPersonId}},\n  \"login\": \"{{operatorLogin}}\",\n  \"senha\": \"{{operatorPassword}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/contas-acesso"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Administrador deve criar conta', () => pm.response.to.have.status(201));",
+          "const json = pm.response.json();",
+          "pm.collectionVariables.set('operatorAccountId', json.id);",
+          "pm.test('Nova conta deve iniciar somente como OPERADOR', () => pm.expect(json.perfis).to.eql(['OPERADOR']));",
+          "pm.test('Resposta não deve expor senha', () => { pm.expect(json).not.to.have.property('senha'); pm.expect(json).not.to.have.property('senhaHash'); });"
+        ] }
+      }]
+    },
+    {
+      "name": "05 - Login do operador",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"login\": \"{{operatorLogin}}\",\n  \"senha\": \"{{operatorPassword}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/autenticacao/login"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Operador deve autenticar', () => pm.response.to.have.status(200));",
+          "const body = pm.response.json();",
+          "pm.collectionVariables.set('operatorToken', body.accessToken);",
+          "pm.collectionVariables.set('accessToken', body.accessToken);",
+          "const parte = body.accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');",
+          "const payload = JSON.parse(atob(parte.padEnd(Math.ceil(parte.length / 4) * 4, '=')));",
+          "pm.test('Token deve conter OPERADOR', () => pm.expect(payload.perfis).to.include('OPERADOR'));",
+          "pm.test('Token ainda não deve conter ADMINISTRADOR', () => pm.expect(payload.perfis).not.to.include('ADMINISTRADOR'));"
+        ] }
+      }]
+    },
+    {
+      "name": "06 - Operador consulta a própria conta",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/contas-acesso/me"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Operação cotidiana deve retornar 200', () => pm.response.to.have.status(200));",
+          "pm.test('Conta deve corresponder ao operador', () => pm.expect(pm.response.json().login).to.eql(pm.collectionVariables.get('operatorLogin')));"
+        ] }
+      }]
+    },
+    {
+      "name": "07 - Operador não pode criar conta",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pessoaId\": {{operatorPersonId}},\n  \"login\": \"tentativa.proibida\",\n  \"senha\": \"{{operatorPassword}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/contas-acesso"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Operador autenticado deve receber 403', () => pm.response.to.have.status(403));"
+        ] }
+      }]
+    },
+    {
+      "name": "08 - Operador não pode excluir recurso",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": "{{baseUrl}}/api/generos/999999"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Exclusão por OPERADOR deve retornar 403', () => pm.response.to.have.status(403));"
+        ] }
+      }]
+    },
+    {
+      "name": "09 - Administrador promove a conta",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+        },
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"perfis\": [\"OPERADOR\", \"ADMINISTRADOR\"]\n}"
+        },
+        "url": "{{baseUrl}}/api/contas-acesso/{{operatorAccountId}}/perfis"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Administrador deve alterar perfis', () => pm.response.to.have.status(200));",
+          "pm.test('Resposta deve conter os dois perfis', () => pm.expect(pm.response.json().perfis).to.include.members(['OPERADOR', 'ADMINISTRADOR']));"
+        ] }
+      }]
+    },
+    {
+      "name": "10 - Token antigo continua sem novo perfil",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{operatorToken}}", "type": "string" }]
+        },
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"ATIVA\"\n}"
+        },
+        "url": "{{baseUrl}}/api/contas-acesso/{{operatorAccountId}}/status"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Token antigo ainda deve receber 403', () => pm.response.to.have.status(403));"
+        ] }
+      }]
+    },
+    {
+      "name": "11 - Novo login recebe perfil atualizado",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"login\": \"{{operatorLogin}}\",\n  \"senha\": \"{{operatorPassword}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/autenticacao/login"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Novo login deve retornar 200', () => pm.response.to.have.status(200));",
+          "const body = pm.response.json();",
+          "pm.collectionVariables.set('accessToken', body.accessToken);",
+          "const parte = body.accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');",
+          "const payload = JSON.parse(atob(parte.padEnd(Math.ceil(parte.length / 4) * 4, '=')));",
+          "pm.test('Novo token deve conter ADMINISTRADOR', () => pm.expect(payload.perfis).to.include('ADMINISTRADOR'));",
+          "pm.test('Novo token deve ser diferente do anterior', () => pm.expect(body.accessToken).not.to.eql(pm.collectionVariables.get('operatorToken')));"
+        ] }
+      }]
+    },
+    {
+      "name": "12 - Administrador não pode bloquear a si mesmo",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"BLOQUEADA\"\n}"
+        },
+        "url": "{{baseUrl}}/api/contas-acesso/{{operatorAccountId}}/status"
+      },
+      "event": [{
+        "listen": "test",
+        "script": { "exec": [
+          "pm.test('Autobloqueio administrativo deve retornar 400', () => pm.response.to.have.status(400));",
+          "pm.test('Mensagem deve explicar a proteção', () => pm.expect(pm.response.json().message).to.eql('O administrador não pode bloquear a própria conta'));"
+        ] }
+      }]
+    }
+  ]
+}
