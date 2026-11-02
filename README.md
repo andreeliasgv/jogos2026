@@ -15,6 +15,7 @@ Fornecedor     0..1 ──── 0..N Jogo
 
 Pessoa 1 ───── 0..1 Cliente
 Pessoa 1 ───── 0..1 Colaborador
+Pessoa 1 ───── 0..1 ContaAcesso 1 ───── 1..N PerfilAcesso
 Cliente 1 ──── 0..N Venda
 Colaborador 1  0..N Venda
 Venda 1 ────── 1..N ItemVenda N ───── 1 Jogo
@@ -30,6 +31,8 @@ Na Aula 08, um índice funcional passou a garantir a unicidade do nome normaliza
 
 Na Aula 10, a migration `005-dominio-comercial-vendas.yaml` acrescentou fornecedores, pessoas, clientes, colaboradores, vendas e itens. O item preserva quantidade e preço praticado, enquanto as chaves e constraints mantêm a integridade entre os novos recursos.
 
+Na Aula 12, a migration `006-contas-acesso.yaml` acrescentou contas e perfis. O banco garante uma conta por pessoa, login único normalizado e valores conhecidos de status e perfil. O histórico possui agora 35 changesets.
+
 ## Camada de aplicação
 
 Repositories Spring Data JPA realizam o acesso aos dados. Serviços transacionais coordenam os casos de uso e preservam os comportamentos definidos no domínio.
@@ -39,6 +42,8 @@ As entidades concentram as regras de alteração, status, associações e estoqu
 Pessoa representa a identidade compartilhada. Cliente e Colaborador são papéis opcionais modelados por composição, permitindo que a mesma pessoa exerça ambos sem herança JPA. A finalização de uma venda valida todos os itens e baixa seus estoques em uma única transação.
 
 Na Aula 11, finalizações de vendas e movimentações manuais passaram a adquirir locks pessimistas nos jogos antes de alterar o estoque. Vendas com vários itens bloqueiam os jogos por ID crescente, reduzindo o risco de deadlock. O teste concorrente usa duas transações reais e comprova que somente uma venda consome um saldo disputado.
+
+Na Aula 12, `ContaAcesso` passou a concentrar login, hash BCrypt, status e perfis sem misturar credenciais com `Pessoa`, `Cliente` ou `Colaborador`. O Spring Security carrega as contas do PostgreSQL e protege todas as rotas que não foram explicitamente declaradas públicas.
 
 ## API REST
 
@@ -92,6 +97,10 @@ POST   /api/vendas/{id}/itens
 DELETE /api/vendas/{vendaId}/itens/{itemId}
 POST   /api/vendas/{id}/finalizacao
 POST   /api/vendas/{id}/cancelamento
+
+POST /api/contas-acesso
+GET  /api/contas-acesso/me
+PUT  /api/contas-acesso/me/senha
 ```
 
 DTOs definem os contratos de entrada e saída, mapeadores isolam as conversões e o tratamento global de exceções padroniza os erros `400`, `404` e `409`.
@@ -114,7 +123,9 @@ No profile de produção, o documento e a interface permanecem desabilitados at�
 
 Na Aula 10, CPF e CNPJ passaram a ser validados por dígitos verificadores tanto no domínio quanto na entrada HTTP. Vendas preservam o preço histórico dos jogos e só baixam o estoque quando finalizadas. A coleção Postman da aula executa um cenário comercial completo com 17 requisições.
 
-A suíte automatizada possui 67 testes entre domínio, persistência, aplicação, API e contrato OpenAPI.
+Na Aula 12, a API passou a usar HTTP Basic de forma stateless. Health, documentação e o bootstrap provisório de pessoa e conta permanecem públicos; as demais rotas exigem autenticação. Senhas são armazenadas somente como hash `{bcrypt}` e Basic deve ser usado apenas sobre HTTPS/TLS em produção.
+
+A suíte automatizada possui 75 testes entre domínio, persistência, aplicação, segurança, API e contrato OpenAPI.
 
 ## Entregas
 
@@ -127,3 +138,4 @@ A suíte automatizada possui 67 testes entre domínio, persistência, aplicaçã
 - [Aula 09 — Documentação da API com OpenAPI](docs/09aula/entrega.md)
 - [Aula 10 — Pessoas, fornecedores e vendas](docs/10aula/entrega.md)
 - [Aula 11 — Concorrência de estoque e locking](docs/11aula/entrega.md)
+- [Aula 12 — Autenticação e proteção de senhas](docs/12aula/entrega.md)

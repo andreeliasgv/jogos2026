@@ -13,7 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
 class OpenApiDocumentationTest {
 
@@ -56,10 +56,15 @@ class OpenApiDocumentationTest {
                 .andExpect(jsonPath("$.paths['/api/fornecedores'].post").exists())
                 .andExpect(jsonPath("$.paths['/api/vendas/{id}/itens'].post").exists())
                 .andExpect(jsonPath("$.paths['/api/vendas/{id}/finalizacao'].post").exists())
+                .andExpect(jsonPath("$.paths['/api/contas-acesso'].post").exists())
+                .andExpect(jsonPath("$.paths['/api/contas-acesso/me'].get").exists())
+                .andExpect(jsonPath("$.components.securitySchemes.basicAuth.scheme").value("basic"))
+                .andExpect(jsonPath("$.security[0].basicAuth").exists())
                 .andExpect(jsonPath(
                         "$.components.schemas.JogoResponse")
                         .exists())
                 .andExpect(jsonPath("$.components.schemas.VendaResponse").exists())
+                .andExpect(jsonPath("$.components.schemas.ContaAcessoResponse").exists())
                 .andExpect(jsonPath(
                         "$.components.schemas.ApiError")
                         .exists());
