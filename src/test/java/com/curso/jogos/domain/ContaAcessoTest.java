@@ -1,6 +1,9 @@
 package com.curso.jogos.domain;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.LocalDate;
 import java.util.Set;
@@ -24,6 +27,31 @@ class ContaAcessoTest {
         assertEquals(StatusContaAcesso.ATIVA, conta.getStatus());
         assertEquals(Set.of(PerfilAcesso.OPERADOR), conta.getPerfis());
         assertTrue(conta.podeAutenticar());
+    }
+
+    @ParameterizedTest(name = "login inválido: [{0}]")
+    @NullAndEmptySource
+    @ValueSource(strings = {" ", "   "})
+    void naoDeveAceitarLoginNuloOuEmBranco(String loginInvalido) {
+        IllegalArgumentException erro = assertThrows(
+                IllegalArgumentException.class,
+                () -> new ContaAcesso(
+                        novaPessoa(),
+                        loginInvalido,
+                        "{bcrypt}hash"));
+
+        assertEquals("Login é obrigatório", erro.getMessage());
+    }
+
+    @Test
+    void deveAlterarSenhaSomenteQuandoHashForValido() {
+        ContaAcesso conta = novaConta();
+
+        conta.alterarSenha("  {bcrypt}novo-hash  ");
+
+        assertEquals("{bcrypt}novo-hash", conta.getSenhaHash());
+        assertThrows(IllegalArgumentException.class,
+                () -> conta.alterarSenha(" "));
     }
 
     @Test
