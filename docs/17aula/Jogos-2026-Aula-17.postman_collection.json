@@ -1,0 +1,114 @@
+{
+  "info": {
+    "_postman_id": "a17f2026-0000-4000-8000-jogos2026",
+    "name": "Jogos 2026 - Aula 17",
+    "description": "Proteção do login e auditoria. Preencha adminPassword somente no Postman local.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "adminLogin", "value": "administrador" },
+    { "key": "adminPassword", "value": "" },
+    { "key": "adminAccessToken", "value": "" },
+    { "key": "loginDesconhecido", "value": "inexistente.aula17" },
+    { "key": "loginBloqueio", "value": "bloqueio.aula17" },
+    { "key": "senhaIncorreta", "value": "senha-incorreta-aula17" }
+  ],
+  "item": [
+    {
+      "name": "01 - Health público",
+      "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{baseUrl}}/api/health" },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Health deve retornar 200', () => pm.response.to.have.status(200));"
+      ] } }]
+    },
+    {
+      "name": "02 - Login desconhecido recebe resposta genérica",
+      "request": {
+        "auth": { "type": "noauth" }, "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"login\": \"{{loginDesconhecido}}\",\n  \"senha\": \"{{senhaIncorreta}}\"\n}" },
+        "url": "{{baseUrl}}/api/autenticacao/login"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Login desconhecido deve retornar 401', () => pm.response.to.have.status(401));",
+        "pm.test('Mensagem deve ser genérica', () => pm.expect(pm.response.json().message).eql('Login ou senha inválidos'));"
+      ] } }]
+    },
+    {
+      "name": "03 - Login administrativo",
+      "request": {
+        "auth": { "type": "noauth" }, "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"login\": \"{{adminLogin}}\",\n  \"senha\": \"{{adminPassword}}\"\n}" },
+        "url": "{{baseUrl}}/api/autenticacao/login"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Administrador deve autenticar', () => pm.response.to.have.status(200));",
+        "pm.collectionVariables.set('adminAccessToken', pm.response.json().accessToken);"
+      ] } }]
+    },
+    {
+      "name": "04 - Consultar falhas sem expor identificadores",
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }] },
+        "method": "GET", "url": "{{baseUrl}}/api/auditoria-seguranca?tipo=LOGIN_FALHA&page=0&size=20"
+      },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Administrador deve consultar auditoria', () => pm.response.to.have.status(200));",
+        "const texto = pm.response.text();",
+        "pm.test('Resposta não deve expor login, senha ou hash interno', () => {",
+        "  pm.expect(texto).not.include(pm.collectionVariables.get('loginDesconhecido'));",
+        "  pm.expect(texto).not.include(pm.collectionVariables.get('senhaIncorreta'));",
+        "  pm.expect(texto).not.include('identificadorHash');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "05 - Falha de bloqueio 1",
+      "request": { "auth": { "type": "noauth" }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"login\":\"{{loginBloqueio}}\",\"senha\":\"{{senhaIncorreta}}\"}" }, "url": "{{baseUrl}}/api/autenticacao/login" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Falha 1 deve retornar 401', () => pm.response.to.have.status(401));"] } }]
+    },
+    {
+      "name": "06 - Falha de bloqueio 2",
+      "request": { "auth": { "type": "noauth" }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"login\":\"{{loginBloqueio}}\",\"senha\":\"{{senhaIncorreta}}\"}" }, "url": "{{baseUrl}}/api/autenticacao/login" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Falha 2 deve retornar 401', () => pm.response.to.have.status(401));"] } }]
+    },
+    {
+      "name": "07 - Falha de bloqueio 3",
+      "request": { "auth": { "type": "noauth" }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"login\":\"{{loginBloqueio}}\",\"senha\":\"{{senhaIncorreta}}\"}" }, "url": "{{baseUrl}}/api/autenticacao/login" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Falha 3 deve retornar 401', () => pm.response.to.have.status(401));"] } }]
+    },
+    {
+      "name": "08 - Falha de bloqueio 4",
+      "request": { "auth": { "type": "noauth" }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"login\":\"{{loginBloqueio}}\",\"senha\":\"{{senhaIncorreta}}\"}" }, "url": "{{baseUrl}}/api/autenticacao/login" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Falha 4 deve retornar 401', () => pm.response.to.have.status(401));"] } }]
+    },
+    {
+      "name": "09 - Quinta falha ativa bloqueio",
+      "request": { "auth": { "type": "noauth" }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"login\":\"{{loginBloqueio}}\",\"senha\":\"{{senhaIncorreta}}\"}" }, "url": "{{baseUrl}}/api/autenticacao/login" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Quinta falha deve retornar 401', () => pm.response.to.have.status(401));"] } }]
+    },
+    {
+      "name": "10 - Tentativa bloqueada",
+      "request": { "auth": { "type": "noauth" }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"login\":\"{{loginBloqueio}}\",\"senha\":\"qualquer-valor\"}" }, "url": "{{baseUrl}}/api/autenticacao/login" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Tentativa bloqueada deve retornar 401', () => pm.response.to.have.status(401));"] } }]
+    },
+    {
+      "name": "11 - Consultar ativação do bloqueio",
+      "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }] }, "method": "GET", "url": "{{baseUrl}}/api/auditoria-seguranca?tipo=BLOQUEIO_TEMPORARIO_ATIVADO&page=0&size=20" },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Consulta deve retornar 200', () => pm.response.to.have.status(200));",
+        "pm.test('Deve existir evento de bloqueio', () => pm.expect(pm.response.json().conteudo.length).above(0));"
+      ] } }]
+    },
+    {
+      "name": "12 - Consultar tentativa recusada",
+      "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }] }, "method": "GET", "url": "{{baseUrl}}/api/auditoria-seguranca?tipo=LOGIN_RECUSADO_BLOQUEIO&page=0&size=20" },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('Consulta deve retornar 200', () => pm.response.to.have.status(200));",
+        "pm.test('Deve existir tentativa recusada', () => pm.expect(pm.response.json().conteudo.length).above(0));"
+      ] } }]
+    }
+  ]
+}

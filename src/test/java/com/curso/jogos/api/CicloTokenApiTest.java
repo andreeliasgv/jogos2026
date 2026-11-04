@@ -3,6 +3,7 @@ package com.curso.jogos.api;
 import com.curso.jogos.domain.ContaAcesso;
 import com.curso.jogos.domain.Pessoa;
 import com.curso.jogos.repository.ContaAcessoRepository;
+import com.curso.jogos.repository.EventoSegurancaRepository;
 import com.curso.jogos.repository.PessoaRepository;
 import com.curso.jogos.repository.SessaoRefreshTokenRepository;
 import com.jayway.jsonpath.JsonPath;
@@ -38,6 +39,7 @@ class CicloTokenApiTest {
     @Autowired PessoaRepository pessoaRepository;
     @Autowired ContaAcessoRepository contaRepository;
     @Autowired SessaoRefreshTokenRepository sessaoRepository;
+    @Autowired EventoSegurancaRepository eventoRepository;
     @Autowired PasswordEncoder passwordEncoder;
     @Autowired JwtDecoder jwtDecoder;
 
@@ -46,6 +48,7 @@ class CicloTokenApiTest {
 
     @AfterEach
     void limparCenario() {
+        eventoRepository.deleteAll();
         sessaoRepository.deleteAll();
         if (contaCriada != null) contaRepository.deleteById(contaCriada.getId());
         if (pessoaCriada != null) pessoaRepository.deleteById(pessoaCriada.getId());

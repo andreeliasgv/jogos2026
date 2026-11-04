@@ -64,6 +64,7 @@ class OpenApiDocumentationTest {
                 .andExpect(jsonPath("$.paths['/api/autenticacao/refresh'].post").exists())
                 .andExpect(jsonPath("$.paths['/api/autenticacao/logout'].post").exists())
                 .andExpect(jsonPath("$.paths['/api/autenticacao/logout-todos'].post").exists())
+                .andExpect(jsonPath("$.paths['/api/auditoria-seguranca'].get").exists())
                 .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"))
                 .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.bearerFormat").value("JWT"))
                 .andExpect(jsonPath("$.security[0].bearerAuth").exists())

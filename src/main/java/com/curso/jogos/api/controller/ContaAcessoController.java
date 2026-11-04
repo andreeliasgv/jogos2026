@@ -56,8 +56,10 @@ public class ContaAcessoController {
     })
     @PostMapping
     public ResponseEntity<ContaAcessoResponse> cadastrar(
+            Authentication authentication,
             @Valid @RequestBody ContaAcessoRequest request) {
-        ContaAcesso conta = service.cadastrar(request.pessoaId(), request.login(), request.senha());
+        ContaAcesso conta = service.cadastrar(
+                request.pessoaId(), request.login(), request.senha(), authentication.getName());
         return ResponseEntity.created(URI.create("/api/contas-acesso/me"))
                 .body(mapper.toResponse(conta));
     }

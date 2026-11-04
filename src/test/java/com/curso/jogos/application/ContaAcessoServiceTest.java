@@ -42,7 +42,7 @@ class ContaAcessoServiceTest {
     void deveCadastrarContaArmazenandoSomenteHashBcrypt() {
         Pessoa pessoa = criarPessoa("hash");
 
-        service.cadastrar(pessoa.getId(), "  Operadora.2026  ", SENHA);
+        service.cadastrar(pessoa.getId(), "  Operadora.2026  ", SENHA, "admin.teste");
 
         ContaAcesso persistida = contaRepository.findByLoginIgnoreCase("operadora.2026")
                 .orElseThrow();
@@ -55,7 +55,7 @@ class ContaAcessoServiceTest {
     @Test
     void deveAlterarSenhaInvalidandoACredencialAnterior() {
         Pessoa pessoa = criarPessoa("alteracao");
-        service.cadastrar(pessoa.getId(), "alteracao.2026", SENHA);
+        service.cadastrar(pessoa.getId(), "alteracao.2026", SENHA, "admin.teste");
 
         String novaSenha = "outra-frase-senha-2026";
         service.alterarSenha("alteracao.2026", SENHA, novaSenha);

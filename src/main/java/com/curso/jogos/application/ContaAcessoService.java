@@ -5,6 +5,7 @@ import com.curso.jogos.domain.PerfilAcesso;
 import com.curso.jogos.domain.Pessoa;
 import com.curso.jogos.domain.Status;
 import com.curso.jogos.domain.StatusContaAcesso;
+import com.curso.jogos.domain.TipoEventoSeguranca;
 import com.curso.jogos.repository.ContaAcessoRepository;
 import com.curso.jogos.repository.PessoaRepository;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,19 +23,23 @@ public class ContaAcessoService {
     private final ContaAcessoRepository repository;
     private final PessoaRepository pessoaRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditoriaSegurancaService auditoriaService;
 
     public ContaAcessoService(
             ContaAcessoRepository repository,
             PessoaRepository pessoaRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            AuditoriaSegurancaService auditoriaService) {
         this.repository = repository;
         this.pessoaRepository = pessoaRepository;
         this.passwordEncoder = passwordEncoder;
+        this.auditoriaService = auditoriaService;
     }
 
     @Transactional
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    public ContaAcesso cadastrar(Long pessoaId, String login, String senhaAberta) {
+    public ContaAcesso cadastrar(Long pessoaId, String login, String senhaAberta,
+                                 String loginAdministrador) {
         String loginNormalizado = validarLogin(login);
         validarSenhaAberta(senhaAberta, "Senha");
 
@@ -52,7 +57,10 @@ public class ContaAcessoService {
         }
 
         String senhaHash = passwordEncoder.encode(senhaAberta);
-        return repository.save(new ContaAcesso(pessoa, loginNormalizado, senhaHash));
+        ContaAcesso conta = repository.save(new ContaAcesso(pessoa, loginNormalizado, senhaHash));
+        auditoriaService.registrar(TipoEventoSeguranca.CONTA_CRIADA,
+                buscarContaIdOpcional(loginAdministrador), conta.getId(), null, null);
+        return conta;
     }
 
     @Transactional(readOnly = true)
@@ -74,6 +82,8 @@ public class ContaAcessoService {
         }
 
         conta.alterarSenha(passwordEncoder.encode(novaSenha));
+        auditoriaService.registrar(TipoEventoSeguranca.SENHA_ALTERADA,
+                conta.getId(), conta.getId(), null, null);
     }
 
     @Transactional
@@ -98,6 +108,8 @@ public class ContaAcessoService {
         }
 
         conta.substituirPerfis(perfis);
+        auditoriaService.registrar(TipoEventoSeguranca.PERFIS_ALTERADOS,
+                buscarContaIdOpcional(loginAdministrador), conta.getId(), null, null);
         return conta;
     }
 
@@ -129,7 +141,13 @@ public class ContaAcessoService {
         } else {
             conta.bloquear();
         }
+        auditoriaService.registrar(TipoEventoSeguranca.STATUS_ALTERADO,
+                buscarContaIdOpcional(loginAdministrador), conta.getId(), null, null);
         return conta;
+    }
+
+    private Long buscarContaIdOpcional(String login) {
+        return repository.findByLoginIgnoreCase(login).map(ContaAcesso::getId).orElse(null);
     }
 
     private ContaAcesso buscarEntidade(String login) {

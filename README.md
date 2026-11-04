@@ -35,6 +35,8 @@ Na Aula 12, a migration `006-contas-acesso.yaml` acrescentou contas e perfis. O 
 
 Na Aula 16, a migration `007-sessoes-refresh-token.yaml` acrescentou sessões renováveis. Somente o hash SHA-256 do refresh token é armazenado, com famílias, rotação de uso único e motivos de revogação. O histórico possui agora 38 changesets.
 
+Na Aula 17, a migration `008-auditoria-protecao-autenticacao.yaml` acrescentou o controle persistente de tentativas e eventos estruturados de segurança. O histórico possui agora 41 changeSets.
+
 ## Camada de aplicação
 
 Repositories Spring Data JPA realizam o acesso aos dados. Serviços transacionais coordenam os casos de uso e preservam os comportamentos definidos no domínio.
@@ -54,6 +56,8 @@ Na Aula 14, os perfis do JWT passaram a ser convertidos em authorities. Operador
 Na Aula 15, a suíte foi organizada como uma estratégia em camadas. Testes unitários de domínio e aplicação fornecem retorno rápido; testes com Spring, PostgreSQL, `MockMvc`, segurança e concorrência validam as fronteiras reais do sistema.
 
 Na Aula 16, o login passou a emitir um par de tokens. O access token continua stateless e curto; o refresh token é opaco, persistido somente como hash e rotacionado a cada uso. Inatividade, validade absoluta, reutilização, logout local e logout global encerram novas renovações conforme a regra correspondente.
+
+Na Aula 17, cinco falhas dentro de quinze minutos passaram a bloquear temporariamente novas tentativas. Login e operações sensíveis geram eventos sem senhas ou tokens, consultáveis apenas por administradores.
 
 ## API REST
 
@@ -118,6 +122,7 @@ POST /api/autenticacao/login
 POST /api/autenticacao/refresh
 POST /api/autenticacao/logout
 POST /api/autenticacao/logout-todos
+GET  /api/auditoria-seguranca
 ```
 
 DTOs definem os contratos de entrada e saída, mapeadores isolam as conversões e o tratamento global de exceções padroniza os erros `400`, `404` e `409`.
@@ -148,7 +153,7 @@ A coleção Postman da Aula 13 automatiza o bootstrap, captura o JWT após o log
 
 Na Aula 14, o bootstrap público foi encerrado. A primeira conta administrativa é provisionada uma única vez por configuração externa e recebe `OPERADOR` e `ADMINISTRADOR`. Depois disso, a flag de provisionamento deve ser desligada e novas contas passam a exigir um token administrativo.
 
-A suíte automatizada possui 99 testes entre domínio, persistência, aplicação, segurança, API e contrato OpenAPI. O JaCoCo integra o ciclo `verify`, gera o relatório em `target/site/jacoco` e exige no mínimo 70% de linhas e 40% de branches cobertas.
+A suíte automatizada possui 109 testes entre domínio, persistência, aplicação, segurança, API e contrato OpenAPI. O JaCoCo integra o ciclo `verify`, gera o relatório em `target/site/jacoco` e exige no mínimo 70% de linhas e 40% de branches cobertas.
 
 ## Entregas
 
@@ -166,3 +171,4 @@ A suíte automatizada possui 99 testes entre domínio, persistência, aplicaçã
 - [Aula 14 — Autorização, perfis e controle de acesso](docs/14aula/entrega.md)
 - [Aula 15 — Estratégia de testes e cobertura com JaCoCo](docs/15aula/entrega.md)
 - [Aula 16 — Ciclo de vida dos tokens](docs/16aula/entrega.md)
+- [Aula 17 — Auditoria e proteção da autenticação](docs/17aula/entrega.md)

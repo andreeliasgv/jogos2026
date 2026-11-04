@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -44,8 +45,10 @@ public class AutenticacaoController {
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/login")
-    public TokenResponse login(@Valid @RequestBody LoginRequest request) {
-        return toResponse(service.autenticar(request.login(), request.senha()));
+    public TokenResponse login(@Valid @RequestBody LoginRequest request,
+                               HttpServletRequest httpRequest) {
+        return toResponse(service.autenticar(
+                request.login(), request.senha(), httpRequest.getRemoteAddr()));
     }
 
     @Operation(summary = "Renovar tokens com rotação do refresh token")
