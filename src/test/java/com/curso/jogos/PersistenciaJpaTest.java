@@ -60,12 +60,12 @@ class PersistenciaJpaTest {
     }
 
     @Test
-    void deveRegistrarTrintaECincoChangeSets() {
+    void deveRegistrarTrintaEOitoChangeSets() {
         Long total = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM databasechangelog",
                 Long.class);
 
-        assertEquals(35L, total);
+        assertEquals(38L, total);
     }
 
     @Test

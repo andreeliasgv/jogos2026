@@ -18,7 +18,10 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableMethodSecurity
-@EnableConfigurationProperties(AdministradorInicialProperties.class)
+@EnableConfigurationProperties({
+        AdministradorInicialProperties.class,
+        RefreshTokenProperties.class
+})
 public class SecurityConfig {
 
     @Bean
@@ -61,7 +64,10 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/swagger-ui/**")
                         .permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/autenticacao/login")
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/autenticacao/login",
+                                "/api/autenticacao/refresh",
+                                "/api/autenticacao/logout")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/contas-acesso")
                         .hasRole("ADMINISTRADOR")

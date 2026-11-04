@@ -31,7 +31,9 @@ Na Aula 08, um índice funcional passou a garantir a unicidade do nome normaliza
 
 Na Aula 10, a migration `005-dominio-comercial-vendas.yaml` acrescentou fornecedores, pessoas, clientes, colaboradores, vendas e itens. O item preserva quantidade e preço praticado, enquanto as chaves e constraints mantêm a integridade entre os novos recursos.
 
-Na Aula 12, a migration `006-contas-acesso.yaml` acrescentou contas e perfis. O banco garante uma conta por pessoa, login único normalizado e valores conhecidos de status e perfil. O histórico possui agora 35 changesets.
+Na Aula 12, a migration `006-contas-acesso.yaml` acrescentou contas e perfis. O banco garante uma conta por pessoa, login único normalizado e valores conhecidos de status e perfil.
+
+Na Aula 16, a migration `007-sessoes-refresh-token.yaml` acrescentou sessões renováveis. Somente o hash SHA-256 do refresh token é armazenado, com famílias, rotação de uso único e motivos de revogação. O histórico possui agora 38 changesets.
 
 ## Camada de aplicação
 
@@ -50,6 +52,8 @@ Na Aula 13, login e senha passaram a ser enviados somente ao endpoint de autenti
 Na Aula 14, os perfis do JWT passaram a ser convertidos em authorities. Operadores executam atividades cotidianas, enquanto criação e gestão de contas e exclusões exigem `ADMINISTRADOR`. A política é aplicada tanto na cadeia HTTP quanto nos serviços administrativos.
 
 Na Aula 15, a suíte foi organizada como uma estratégia em camadas. Testes unitários de domínio e aplicação fornecem retorno rápido; testes com Spring, PostgreSQL, `MockMvc`, segurança e concorrência validam as fronteiras reais do sistema.
+
+Na Aula 16, o login passou a emitir um par de tokens. O access token continua stateless e curto; o refresh token é opaco, persistido somente como hash e rotacionado a cada uso. Inatividade, validade absoluta, reutilização, logout local e logout global encerram novas renovações conforme a regra correspondente.
 
 ## API REST
 
@@ -111,6 +115,9 @@ PUT  /api/contas-acesso/{id}/perfis
 PUT  /api/contas-acesso/{id}/status
 
 POST /api/autenticacao/login
+POST /api/autenticacao/refresh
+POST /api/autenticacao/logout
+POST /api/autenticacao/logout-todos
 ```
 
 DTOs definem os contratos de entrada e saída, mapeadores isolam as conversões e o tratamento global de exceções padroniza os erros `400`, `404` e `409`.
@@ -141,7 +148,7 @@ A coleção Postman da Aula 13 automatiza o bootstrap, captura o JWT após o log
 
 Na Aula 14, o bootstrap público foi encerrado. A primeira conta administrativa é provisionada uma única vez por configuração externa e recebe `OPERADOR` e `ADMINISTRADOR`. Depois disso, a flag de provisionamento deve ser desligada e novas contas passam a exigir um token administrativo.
 
-A suíte automatizada possui 92 testes entre domínio, persistência, aplicação, segurança, API e contrato OpenAPI. O JaCoCo integra o ciclo `verify`, gera o relatório em `target/site/jacoco` e exige no mínimo 70% de linhas e 40% de branches cobertas.
+A suíte automatizada possui 99 testes entre domínio, persistência, aplicação, segurança, API e contrato OpenAPI. O JaCoCo integra o ciclo `verify`, gera o relatório em `target/site/jacoco` e exige no mínimo 70% de linhas e 40% de branches cobertas.
 
 ## Entregas
 
@@ -158,3 +165,4 @@ A suíte automatizada possui 92 testes entre domínio, persistência, aplicaçã
 - [Aula 13 — JWT, Bearer Token e OAuth2 Resource Server](docs/13aula/entrega.md)
 - [Aula 14 — Autorização, perfis e controle de acesso](docs/14aula/entrega.md)
 - [Aula 15 — Estratégia de testes e cobertura com JaCoCo](docs/15aula/entrega.md)
+- [Aula 16 — Ciclo de vida dos tokens](docs/16aula/entrega.md)
